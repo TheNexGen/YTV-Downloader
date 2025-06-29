@@ -13,6 +13,7 @@ ctk.set_default_color_theme("blue")
 class YouTubeDownloaderApp(ctk.CTk):
     def __init__(self):
         super().__init__()
+        self.iconbitmap("ytdownloadlogo.ico")  # For .ico files (best for Windows)
         self.title("YouTube Video Downloader")
         self.geometry("600x700")
         self.resizable(False, False)
