@@ -7,83 +7,123 @@ import io
 import threading
 import yt_dlp
 
-ctk.set_appearance_mode("System")  # Start with system mode
-ctk.set_default_color_theme("blue")
-
 class YouTubeDownloaderApp(ctk.CTk):
     def __init__(self):
         super().__init__()
         self.iconbitmap("ytdownloadlogo.ico")  # For .ico files (best for Windows)
         self.title("YouTube Video Downloader")
-        self.geometry("600x700")
-        self.resizable(False, False)
+        self.geometry("1000x750")
+        self.minsize(600, 500)
+
         self.video_info = None
         self.thumbnail_img = None
         self.download_folder = tk.StringVar(value="")
-        self.quality_options = []
-        self.selected_quality = tk.StringVar(value="")
+        self.selected_quality = tk.StringVar()
+        self.selected_format = tk.StringVar()
         self.dark_mode = True
+
         self.create_widgets()
 
     def create_widgets(self):
-        # Title
-        self.title_label = ctk.CTkLabel(self, text="YouTube Video Downloader", font=("Arial", 24, "bold"))
-        self.title_label.pack(pady=(20, 10))
+        # Main grid layout
+        self.grid_columnconfigure(0, weight=1)
+        self.grid_columnconfigure(1, weight=1)
+        self.grid_rowconfigure(1, weight=1)
 
-        # URL Entry
-        self.url_entry = ctk.CTkEntry(self, width=400, placeholder_text="Paste YouTube video URL here...")
-        self.url_entry.pack(pady=(10, 5))
+        # --- Top Bar ---
+        self.top_frame = ctk.CTkFrame(self, corner_radius=0)
+        self.top_frame.grid(row=0, column=0, columnspan=2, sticky="ew", pady=(0, 10))
+        self.top_frame.grid_columnconfigure(0, weight=1)
 
-        # Fetch Info Button
-        self.fetch_btn = ctk.CTkButton(self, text="Fetch Video Info", command=self.fetch_video_info)
-        self.fetch_btn.pack(pady=(5, 10))
+        self.title_label = ctk.CTkLabel(self.top_frame, text="YouTube Video Downloader", font=("Arial", 20, "bold"))
+        self.title_label.grid(row=0, column=0, padx=20, pady=10, sticky="w")
 
-        # Thumbnail
-        self.thumbnail_label = ctk.CTkLabel(self, text="", width=320, height=180)
-        self.thumbnail_label.pack(pady=(10, 5))
+        self.theme_switch = ctk.CTkSwitch(self.top_frame, text="Light/Dark", command=self.toggle_mode)
+        self.theme_switch.grid(row=0, column=1, padx=10, pady=10, sticky="e")
+        self.theme_switch.select() # Start in dark mode
 
-        # Video Info
-        self.info_frame = ctk.CTkFrame(self)
-        self.info_frame.pack(pady=(5, 10), fill="x", padx=40)
-        self.title_info = ctk.CTkLabel(self.info_frame, text="", font=("Arial", 14, "bold"), wraplength=400, justify="left")
-        self.title_info.pack(anchor="w", pady=(5, 0))
-        self.author_info = ctk.CTkLabel(self.info_frame, text="", font=("Arial", 12), wraplength=400, justify="left")
-        self.author_info.pack(anchor="w")
-        self.length_info = ctk.CTkLabel(self.info_frame, text="", font=("Arial", 12), wraplength=400, justify="left")
-        self.length_info.pack(anchor="w")
+        # --- Left Column: Input and Video Info ---
+        self.left_frame = ctk.CTkFrame(self)
+        self.left_frame.grid(row=1, column=0, padx=(20, 10), pady=10, sticky="nsew")
+        self.left_frame.grid_columnconfigure(0, weight=1)
+        self.left_frame.grid_rowconfigure(2, weight=1)
 
-        # Quality Selection
-        self.quality_label = ctk.CTkLabel(self, text="Select Quality:")
-        self.quality_label.pack(pady=(10, 0))
-        self.quality_menu = ctk.CTkOptionMenu(self, variable=self.selected_quality, values=[])
-        self.quality_menu.pack(pady=(0, 10))
+        self.url_entry = ctk.CTkEntry(self.left_frame, placeholder_text="Paste YouTube video URL here...")
+        self.url_entry.grid(row=0, column=0, padx=10, pady=10, sticky="ew")
 
-        # Download Folder
-        self.folder_frame = ctk.CTkFrame(self)
-        self.folder_frame.pack(pady=(5, 10), fill="x", padx=40)
-        self.folder_label = ctk.CTkLabel(self.folder_frame, text="Download Folder:")
-        self.folder_label.pack(side="left", padx=(0, 10))
-        self.folder_entry = ctk.CTkEntry(self.folder_frame, textvariable=self.download_folder, width=250)
-        self.folder_entry.pack(side="left", padx=(0, 10))
-        self.folder_btn = ctk.CTkButton(self.folder_frame, text="Browse", command=self.browse_folder, width=80)
-        self.folder_btn.pack(side="left")
+        self.fetch_btn = ctk.CTkButton(self.left_frame, text="Fetch Video Info", command=self.fetch_video_info)
+        self.fetch_btn.grid(row=1, column=0, padx=10, pady=5)
 
-        # Download Button
-        self.download_btn = ctk.CTkButton(self, text="Download", command=self.start_download, state="disabled")
-        self.download_btn.pack(pady=(10, 5))
+        self.media_info_frame = ctk.CTkScrollableFrame(self.left_frame)
+        self.media_info_frame.grid(row=2, column=0, padx=10, pady=10, sticky="nsew")
+        self.media_info_frame.grid_columnconfigure(0, weight=1)
 
-        # Progress Bar
-        self.progress = ctk.CTkProgressBar(self, width=400)
+        self.thumbnail_label = ctk.CTkLabel(self.media_info_frame, text="", width=320, height=180)
+        self.thumbnail_label.grid(row=0, column=0, padx=10, pady=10)
+
+        self.title_info = ctk.CTkLabel(self.media_info_frame, text="Title: ", font=("Arial", 14, "bold"), justify="left")
+        self.title_info.grid(row=1, column=0, sticky="ew", padx=10, pady=2)
+        self.author_info = ctk.CTkLabel(self.media_info_frame, text="Channel: ", font=("Arial", 12), justify="left")
+        self.author_info.grid(row=2, column=0, sticky="ew", padx=10, pady=2)
+        self.length_info = ctk.CTkLabel(self.media_info_frame, text="Length: ", font=("Arial", 12), justify="left")
+        self.length_info.grid(row=3, column=0, sticky="ew", padx=10, pady=2)
+        self.views_info = ctk.CTkLabel(self.media_info_frame, text="Views: ", font=("Arial", 12), justify="left")
+        self.views_info.grid(row=4, column=0, sticky="ew", padx=10, pady=2)
+
+        # --- Right Column: Download Options ---
+        self.right_frame = ctk.CTkFrame(self)
+        self.right_frame.grid(row=1, column=1, padx=(10, 20), pady=10, sticky="nsew")
+        self.right_frame.grid_columnconfigure(0, weight=1)
+
+        # Format and Quality
+        self.format_quality_frame = ctk.CTkFrame(self.right_frame)
+        self.format_quality_frame.grid(row=0, column=0, padx=10, pady=10, sticky="ew")
+        self.format_quality_frame.grid_columnconfigure(1, weight=1)
+
+        ctk.CTkLabel(self.format_quality_frame, text="Format:").grid(row=0, column=0, padx=10, pady=5, sticky="w")
+        self.format_menu = ctk.CTkOptionMenu(self.format_quality_frame, variable=self.selected_format, values=["MP4", "MP3", "WebM", "MKV"])
+        self.format_menu.grid(row=0, column=1, padx=10, pady=5, sticky="ew")
+
+        ctk.CTkLabel(self.format_quality_frame, text="Quality:").grid(row=1, column=0, padx=10, pady=5, sticky="w")
+        self.quality_menu = ctk.CTkOptionMenu(self.format_quality_frame, variable=self.selected_quality, values=["Best", "1080p", "720p", "480p"])
+        self.quality_menu.grid(row=1, column=1, padx=10, pady=5, sticky="ew")
+
+        # Download Config
+        self.config_frame = ctk.CTkFrame(self.right_frame)
+        self.config_frame.grid(row=1, column=0, padx=10, pady=10, sticky="ew")
+        self.config_frame.grid_columnconfigure(0, weight=1)
+
+        ctk.CTkLabel(self.config_frame, text="Download Folder:").grid(row=0, column=0, columnspan=2, padx=10, pady=5, sticky="w")
+        self.folder_entry = ctk.CTkEntry(self.config_frame, textvariable=self.download_folder)
+        self.folder_entry.grid(row=1, column=0, padx=(10,5), pady=5, sticky="ew")
+        self.browse_btn = ctk.CTkButton(self.config_frame, text="Browse", command=self.browse_folder, width=80)
+        self.browse_btn.grid(row=1, column=1, padx=(0,10), pady=5)
+
+        # Download Actions
+        self.download_frame = ctk.CTkFrame(self.right_frame)
+        self.download_frame.grid(row=2, column=0, padx=10, pady=10, sticky="ew")
+        self.download_frame.grid_columnconfigure(0, weight=1)
+
+        self.download_btn = ctk.CTkButton(self.download_frame, text="Download", command=self.start_download, state="disabled")
+        self.download_btn.grid(row=0, column=0, columnspan=3, padx=10, pady=10, sticky="ew")
+
+        self.progress = ctk.CTkProgressBar(self.download_frame)
         self.progress.set(0)
-        self.progress.pack(pady=(10, 5))
+        self.progress.grid(row=1, column=0, columnspan=3, padx=10, pady=5, sticky="ew")
+        
+        self.status_label = ctk.CTkLabel(self.download_frame, text="")
+        self.status_label.grid(row=2, column=0, columnspan=3, padx=10, pady=5)
 
-        # Status Label
-        self.status_label = ctk.CTkLabel(self, text="", font=("Arial", 12))
-        self.status_label.pack(pady=(5, 10))
+        # --- Bottom Tabs ---
+        self.tab_view = ctk.CTkTabview(self)
+        self.tab_view.grid(row=2, column=0, columnspan=2, padx=20, pady=(10,20), sticky="nsew")
+        self.tab_view.add("Download Queue")
+        self.tab_view.add("History")
+        self.tab_view.add("Batch Download")
 
-        # Dark Mode Toggle
-        self.toggle_btn = ctk.CTkButton(self, text="Toggle Dark/Light Mode", command=self.toggle_mode)
-        self.toggle_btn.pack(pady=(10, 10))
+        ctk.CTkLabel(self.tab_view.tab("Download Queue"), text="Download queue management will be here.").pack(padx=20, pady=20)
+        ctk.CTkLabel(self.tab_view.tab("History"), text="Download history will be here.").pack(padx=20, pady=20)
+        ctk.CTkLabel(self.tab_view.tab("Batch Download"), text="Playlist/batch download options will be here.").pack(padx=20, pady=20)
 
     def fetch_video_info(self):
         url = self.url_entry.get().strip()
@@ -121,28 +161,24 @@ class YouTubeDownloaderApp(ctk.CTk):
                 self.thumbnail_label.configure(text="[Thumbnail not available]", image=None)
         else:
             self.thumbnail_label.configure(text="[Thumbnail not available]", image=None)
+        
         # Info
         self.title_info.configure(text=f"Title: {info.get('title', 'N/A')}")
         self.author_info.configure(text=f"Channel: {info.get('uploader', 'N/A')}")
         mins, secs = divmod(info.get('duration', 0), 60)
         self.length_info.configure(text=f"Length: {mins}m {secs}s")
+        self.views_info.configure(text=f"Views: {info.get('view_count', 'N/A'):,}")
+
         # Quality options
         formats = info.get('formats', [])
-        options = []
+        video_options = set()
         for f in formats:
             if f.get('vcodec') != 'none' and f.get('acodec') != 'none':
-                label = f"Video+Audio | {f.get('format_note', '')} | {f.get('ext', '')} | {f.get('filesize', 0)//1024//1024}MB"
-            elif f.get('vcodec') != 'none':
-                label = f"Video Only | {f.get('format_note', '')} | {f.get('ext', '')} | {f.get('filesize', 0)//1024//1024}MB"
-            elif f.get('acodec') != 'none':
-                label = f"Audio Only | {f.get('abr', '')}kbps | {f.get('ext', '')} | {f.get('filesize', 0)//1024//1024}MB"
-            else:
-                continue
-            options.append(label)
-        self.quality_options = options
-        if options:
-            self.quality_menu.configure(values=options)
-            self.selected_quality.set(options[0])
+                video_options.add(f.get('format_note', ''))
+        
+        if video_options:
+            self.quality_menu.configure(values=sorted(list(video_options), reverse=True))
+            self.selected_quality.set(sorted(list(video_options), reverse=True)[0])
         else:
             self.quality_menu.configure(values=["No formats found"])
             self.selected_quality.set("No formats found")
@@ -166,26 +202,29 @@ class YouTubeDownloaderApp(ctk.CTk):
 
     def _download_thread(self):
         url = self.url_entry.get().strip()
-        selected = self.selected_quality.get()
-        # Find the format code
-        format_id = None
-        for f in self.video_info.get('formats', []):
-            label = ""
-            if f.get('vcodec') != 'none' and f.get('acodec') != 'none':
-                label = f"Video+Audio | {f.get('format_note', '')} | {f.get('ext', '')} | {f.get('filesize', 0)//1024//1024}MB"
-            elif f.get('vcodec') != 'none':
-                label = f"Video Only | {f.get('format_note', '')} | {f.get('ext', '')} | {f.get('filesize', 0)//1024//1024}MB"
-            elif f.get('acodec') != 'none':
-                label = f"Audio Only | {f.get('abr', '')}kbps | {f.get('ext', '')} | {f.get('filesize', 0)//1024//1024}MB"
-            if label == selected:
-                format_id = f.get('format_id')
-                break
-        ydl_opts = {
-            'format': format_id if format_id else 'best',
-            'outtmpl': f"{self.download_folder.get()}/%(title)s.%(ext)s",
-            'progress_hooks': [self.yt_progress_hook],
-            'quiet': True,
-        }
+        selected_format = self.selected_format.get().lower()
+        selected_quality = self.selected_quality.get()
+
+        if selected_format in ['mp3', 'm4a']: # Audio download
+            ydl_opts = {
+                'format': 'bestaudio/best',
+                'outtmpl': f"{self.download_folder.get()}/%(title)s.%(ext)s",
+                'progress_hooks': [self.yt_progress_hook],
+                'postprocessors': [{
+                    'key': 'FFmpegExtractAudio',
+                    'preferredcodec': selected_format,
+                    'preferredquality': '192', # default quality
+                }],
+                'quiet': True,
+            }
+        else: # Video download
+            ydl_opts = {
+                'format': f'bestvideo[height<={selected_quality[:-1]}]+bestaudio/best[height<={selected_quality[:-1]}]/best',
+                'outtmpl': f"{self.download_folder.get()}/%(title)s.%(ext)s",
+                'progress_hooks': [self.yt_progress_hook],
+                'quiet': True,
+            }
+
         try:
             with yt_dlp.YoutubeDL(ydl_opts) as ydl:
                 ydl.download([url])
@@ -216,4 +255,4 @@ class YouTubeDownloaderApp(ctk.CTk):
 
 if __name__ == "__main__":
     app = YouTubeDownloaderApp()
-    app.mainloop() 
+    app.mainloop()
