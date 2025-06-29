@@ -1,6 +1,6 @@
 import customtkinter as ctk
 import tkinter as tk
-from tkinter import filedialog, messagebox
+from tkinter import filedialog, messagebox, Menu
 from PIL import Image, ImageTk
 import requests
 import io
@@ -22,7 +22,67 @@ class YouTubeDownloaderApp(ctk.CTk):
         self.selected_format = tk.StringVar()
         self.dark_mode = True
 
+        self.create_menu()
         self.create_widgets()
+
+    def create_menu(self):
+        menubar = Menu(self)
+        self.config(menu=menubar)
+
+        # --- File Menu ---
+        file_menu = Menu(menubar, tearoff=0)
+        menubar.add_cascade(label="File", menu=file_menu)
+        file_menu.add_command(label="Add New Download", accelerator="Ctrl+N", command=self.placeholder_command)
+        file_menu.add_command(label="Import from File/Playlist", command=self.placeholder_command)
+        file_menu.add_command(label="Export Download List", command=self.placeholder_command)
+        file_menu.add_separator()
+        file_menu.add_command(label="Exit", command=self.quit)
+
+        # --- Edit Menu ---
+        edit_menu = Menu(menubar, tearoff=0)
+        menubar.add_cascade(label="Edit", menu=edit_menu)
+        edit_menu.add_command(label="Preferences/Settings", command=self.placeholder_command)
+        edit_menu.add_command(label="Clear Download History", command=self.placeholder_command)
+        edit_menu.add_separator()
+        edit_menu.add_command(label="Reset to Defaults", command=self.placeholder_command)
+
+        # --- View Menu ---
+        view_menu = Menu(menubar, tearoff=0)
+        menubar.add_cascade(label="View", menu=view_menu)
+        view_menu.add_command(label="Toggle Dark/Light Mode", command=self.toggle_mode)
+        view_menu.add_command(label="Show/Hide Download Queue", command=self.placeholder_command)
+        view_menu.add_command(label="Show Logs / Output Console", command=self.placeholder_command)
+        view_menu.add_separator()
+        view_menu.add_command(label="Fullscreen Mode", command=self.toggle_fullscreen)
+
+        # --- Tools Menu ---
+        tools_menu = Menu(menubar, tearoff=0)
+        menubar.add_cascade(label="Tools", menu=tools_menu)
+        tools_menu.add_command(label="Batch Downloader", command=self.placeholder_command)
+        tools_menu.add_command(label="Audio Extractor", command=self.placeholder_command)
+        tools_menu.add_command(label="File Format Converter", command=self.placeholder_command)
+        tools_menu.add_command(label="Subtitle Downloader", command=self.placeholder_command)
+        tools_menu.add_separator()
+        tools_menu.add_command(label="Proxy Configuration", command=self.placeholder_command)
+
+        # --- Downloads Menu ---
+        downloads_menu = Menu(menubar, tearoff=0)
+        menubar.add_cascade(label="Downloads", menu=downloads_menu)
+        downloads_menu.add_command(label="Pause All Downloads", command=self.placeholder_command)
+        downloads_menu.add_command(label="Resume All", command=self.placeholder_command)
+        downloads_menu.add_command(label="Cancel All", command=self.placeholder_command)
+        downloads_menu.add_separator()
+        downloads_menu.add_command(label="Open Download Folder", command=self.browse_folder)
+        downloads_menu.add_command(label="Retry Failed Downloads", command=self.placeholder_command)
+
+        # --- Help Menu ---
+        help_menu = Menu(menubar, tearoff=0)
+        menubar.add_cascade(label="Help", menu=help_menu)
+        help_menu.add_command(label="User Guide", command=self.placeholder_command)
+        help_menu.add_command(label="Check for Updates", command=self.placeholder_command)
+        help_menu.add_command(label="Report a Bug", command=self.placeholder_command)
+        help_menu.add_separator()
+        help_menu.add_command(label="About This App", command=self.show_about)
 
     def create_widgets(self):
         # Main grid layout
@@ -57,18 +117,15 @@ class YouTubeDownloaderApp(ctk.CTk):
         self.media_info_frame = ctk.CTkScrollableFrame(self.left_frame)
         self.media_info_frame.grid(row=2, column=0, padx=10, pady=10, sticky="nsew")
         self.media_info_frame.grid_columnconfigure(0, weight=1)
+        self.media_info_frame._scrollbar.grid_forget()
 
         self.thumbnail_label = ctk.CTkLabel(self.media_info_frame, text="", width=320, height=180)
         self.thumbnail_label.grid(row=0, column=0, padx=10, pady=10)
 
-        self.title_info = ctk.CTkLabel(self.media_info_frame, text="Title: ", font=("Arial", 14, "bold"), justify="left")
-        self.title_info.grid(row=1, column=0, sticky="ew", padx=10, pady=2)
-        self.author_info = ctk.CTkLabel(self.media_info_frame, text="Channel: ", font=("Arial", 12), justify="left")
-        self.author_info.grid(row=2, column=0, sticky="ew", padx=10, pady=2)
-        self.length_info = ctk.CTkLabel(self.media_info_frame, text="Length: ", font=("Arial", 12), justify="left")
-        self.length_info.grid(row=3, column=0, sticky="ew", padx=10, pady=2)
-        self.views_info = ctk.CTkLabel(self.media_info_frame, text="Views: ", font=("Arial", 12), justify="left")
-        self.views_info.grid(row=4, column=0, sticky="ew", padx=10, pady=2)
+        self.title_info = ctk.CTkLabel(self.media_info_frame, font=("Arial", 14, "bold"), justify="left")
+        self.author_info = ctk.CTkLabel(self.media_info_frame, font=("Arial", 12), justify="left")
+        self.length_info = ctk.CTkLabel(self.media_info_frame, font=("Arial", 12), justify="left")
+        self.views_info = ctk.CTkLabel(self.media_info_frame, font=("Arial", 12), justify="left")
 
         # --- Right Column: Download Options ---
         self.right_frame = ctk.CTkFrame(self)
@@ -126,6 +183,13 @@ class YouTubeDownloaderApp(ctk.CTk):
         ctk.CTkLabel(self.tab_view.tab("Batch Download"), text="Playlist/batch download options will be here.").pack(padx=20, pady=20)
 
     def fetch_video_info(self):
+        # Clear previous info
+        self.thumbnail_label.configure(image=None, text="")
+        self.title_info.grid_forget()
+        self.author_info.grid_forget()
+        self.length_info.grid_forget()
+        self.views_info.grid_forget()
+
         url = self.url_entry.get().strip()
         if not url:
             messagebox.showerror("Error", "Please enter a YouTube URL.")
@@ -169,19 +233,27 @@ class YouTubeDownloaderApp(ctk.CTk):
         self.length_info.configure(text=f"Length: {mins}m {secs}s")
         self.views_info.configure(text=f"Views: {info.get('view_count', 'N/A'):,}")
 
+        # Place labels on grid
+        self.title_info.grid(row=1, column=0, sticky="ew", padx=10, pady=2)
+        self.author_info.grid(row=2, column=0, sticky="ew", padx=10, pady=2)
+        self.length_info.grid(row=3, column=0, sticky="ew", padx=10, pady=2)
+        self.views_info.grid(row=4, column=0, sticky="ew", padx=10, pady=2)
+
         # Quality options
         formats = info.get('formats', [])
         video_options = set()
         for f in formats:
-            if f.get('vcodec') != 'none' and f.get('acodec') != 'none':
-                video_options.add(f.get('format_note', ''))
+            if f.get('vcodec') not in [None, 'none'] and f.get('height') is not None:
+                video_options.add(f"{f['height']}p")
         
         if video_options:
-            self.quality_menu.configure(values=sorted(list(video_options), reverse=True))
-            self.selected_quality.set(sorted(list(video_options), reverse=True)[0])
+            # Sort by integer value of resolution
+            sorted_options = sorted(list(video_options), key=lambda x: int(x.replace('p','')), reverse=True)
+            self.quality_menu.configure(values=sorted_options)
+            self.selected_quality.set(sorted_options[0])
         else:
-            self.quality_menu.configure(values=["No formats found"])
-            self.selected_quality.set("No formats found")
+            self.quality_menu.configure(values=["No qualities found"])
+            self.selected_quality.set("No qualities found")
 
     def browse_folder(self):
         folder = filedialog.askdirectory()
@@ -252,6 +324,15 @@ class YouTubeDownloaderApp(ctk.CTk):
         else:
             ctk.set_appearance_mode("Dark")
             self.dark_mode = True
+
+    def toggle_fullscreen(self):
+        self.attributes("-fullscreen", not self.attributes("-fullscreen"))
+
+    def show_about(self):
+        messagebox.showinfo("About YouTube Downloader", "Version: 1.0\nCreated with CustomTkinter")
+
+    def placeholder_command(self):
+        messagebox.showinfo("Info", "This feature is not yet implemented.")
 
 if __name__ == "__main__":
     app = YouTubeDownloaderApp()
