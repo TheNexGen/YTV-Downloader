@@ -6,6 +6,7 @@ import requests
 import io
 import threading
 import yt_dlp
+import os
 
 class YouTubeDownloaderApp(ctk.CTk):
     def __init__(self):
@@ -20,6 +21,9 @@ class YouTubeDownloaderApp(ctk.CTk):
         self.selected_quality = tk.StringVar()
         self.selected_format = tk.StringVar()
         self.dark_mode = True
+
+        # Path to bundled ffmpeg
+        self.ffmpeg_path = os.path.abspath(os.path.join(os.path.dirname(__file__), 'Tools', 'ffmpeg.exe'))
 
         self.create_menu()
         self.create_widgets()
@@ -198,7 +202,7 @@ class YouTubeDownloaderApp(ctk.CTk):
         threading.Thread(target=self._fetch_info_thread, args=(url,), daemon=True).start()
 
     def _fetch_info_thread(self, url):
-        ydl_opts = {"quiet": True, "skip_download": True}
+        ydl_opts = {"quiet": True, "skip_download": True, "ffmpeg_location": self.ffmpeg_path}
         try:
             with yt_dlp.YoutubeDL(ydl_opts) as ydl:
                 info = ydl.extract_info(url, download=False)
@@ -218,7 +222,7 @@ class YouTubeDownloaderApp(ctk.CTk):
                 response = requests.get(thumb_url)
                 img_data = response.content
                 img = Image.open(io.BytesIO(img_data)).resize((320, 180))
-                self.thumbnail_img = ImageTk.PhotoImage(img)
+                self.thumbnail_img = ctk.CTkImage(light_image=img, dark_image=img, size=(320, 180))
                 self.thumbnail_label.configure(image=self.thumbnail_img, text="")
             except Exception:
                 self.thumbnail_label.configure(text="[Thumbnail not available]", image=None)
@@ -287,6 +291,7 @@ class YouTubeDownloaderApp(ctk.CTk):
                     'preferredquality': '192', # default quality
                 }],
                 'quiet': True,
+                'ffmpeg_location': self.ffmpeg_path,
             }
         else: # Video download
             ydl_opts = {
@@ -294,6 +299,7 @@ class YouTubeDownloaderApp(ctk.CTk):
                 'outtmpl': f"{self.download_folder.get()}/%(title)s.%(ext)s",
                 'progress_hooks': [self.yt_progress_hook],
                 'quiet': True,
+                'ffmpeg_location': self.ffmpeg_path,
             }
 
         try:
