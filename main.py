@@ -7,6 +7,9 @@ import io
 import threading
 import yt_dlp
 import os
+import concurrent.futures
+import datetime
+import re
 
 class YouTubeDownloaderApp(ctk.CTk):
     def __init__(self):
@@ -18,8 +21,7 @@ class YouTubeDownloaderApp(ctk.CTk):
         self.video_info = None
         self.thumbnail_img = None
         self.download_folder = tk.StringVar(value="")
-        self.selected_quality = tk.StringVar()
-        self.selected_format = tk.StringVar()
+        self.selected_format_option = tk.StringVar(value="Video: MP4 (720p)")
         self.dark_mode = True
 
         # Path to bundled ffmpeg
@@ -88,11 +90,12 @@ class YouTubeDownloaderApp(ctk.CTk):
         help_menu.add_command(label="About This App", command=self.show_about)
 
     def create_widgets(self):
-        # Main grid layout
+        # Main grid layout: let both cards fill 50% of the row and expand vertically
         self.grid_columnconfigure(0, weight=1)
         self.grid_columnconfigure(1, weight=1)
+        self.grid_rowconfigure(0, weight=0)
         self.grid_rowconfigure(1, weight=1)
-
+        self.grid_rowconfigure(2, weight=1)
         # --- Top Bar ---
         self.top_frame = ctk.CTkFrame(self, corner_radius=0)
         self.top_frame.grid(row=0, column=0, columnspan=2, sticky="ew", pady=(0, 10))
@@ -107,56 +110,50 @@ class YouTubeDownloaderApp(ctk.CTk):
 
         # --- Left Column: Input and Video Info ---
         self.left_frame = ctk.CTkFrame(self)
-        self.left_frame.grid(row=1, column=0, padx=(20, 10), pady=10, sticky="nsew")
+        self.left_frame.grid(row=1, column=0, padx=(20, 10), pady=10, sticky='nsew')
         self.left_frame.grid_columnconfigure(0, weight=1)
-        self.left_frame.grid_rowconfigure(2, weight=1)
+        self.left_frame.grid_rowconfigure(0, weight=0)
+        self.left_frame.grid_rowconfigure(1, weight=0)
 
-        self.url_entry = ctk.CTkEntry(self.left_frame, placeholder_text="Paste YouTube video URL here...")
-        self.url_entry.grid(row=0, column=0, padx=10, pady=10, sticky="ew")
+        # Single dropdown for both audio and video options
+        self.format_options = [
+            "Audio: MP3", "Audio: M4A", "Audio: WEBM", "Audio: AAC", "Audio: FLAC", "Audio: OPUS", "Audio: OGG", "Audio: WAV",
+            "────────────",
+            "Video: MP4 (144p)", "Video: MP4 (240p)", "Video: MP4 (360p)", "Video: MP4 (480p)", "Video: MP4 (720p)", "Video: MP4 (1080p)", "Video: MP4 (1440p)", "Video: WEBM (4K)"
+        ]
+        self.selected_format_option = tk.StringVar(value="Video: MP4 (720p)")
 
-        self.fetch_btn = ctk.CTkButton(self.left_frame, text="Fetch Video Info", command=self.fetch_video_info)
-        self.fetch_btn.grid(row=1, column=0, padx=10, pady=5)
+        self.url_format_frame = ctk.CTkFrame(self.left_frame)
+        self.url_format_frame.grid(row=0, column=0, padx=10, pady=(10, 2), sticky="ew")
+        self.url_format_frame.grid_columnconfigure(0, weight=3)
+        self.url_format_frame.grid_columnconfigure(1, weight=2)
 
-        self.media_info_frame = ctk.CTkScrollableFrame(self.left_frame)
-        self.media_info_frame.grid(row=2, column=0, padx=10, pady=10, sticky="nsew")
-        self.media_info_frame.grid_columnconfigure(0, weight=1)
-        self.media_info_frame._scrollbar.grid_forget()
+        self.url_entry = ctk.CTkEntry(self.url_format_frame, placeholder_text="Paste YouTube video URL here...")
+        self.url_entry.grid(row=0, column=0, sticky="ew", padx=(0,10))
 
-        self.thumbnail_label = ctk.CTkLabel(self.media_info_frame, text="", width=320, height=180)
-        self.thumbnail_label.grid(row=0, column=0, padx=10, pady=10)
+        self.format_menu = ctk.CTkOptionMenu(self.url_format_frame, variable=self.selected_format_option, values=self.format_options, fg_color="#FFD600", button_color="#FFD600", button_hover_color="#FFEA00", text_color="#333333")
+        self.format_menu.grid(row=0, column=1, sticky="ew")
 
-        self.title_info = ctk.CTkLabel(self.media_info_frame, font=("Arial", 14, "bold"), justify="left")
-        self.author_info = ctk.CTkLabel(self.media_info_frame, font=("Arial", 12), justify="left")
-        self.length_info = ctk.CTkLabel(self.media_info_frame, font=("Arial", 12), justify="left")
-        self.views_info = ctk.CTkLabel(self.media_info_frame, font=("Arial", 12), justify="left")
+        self.download_btn = ctk.CTkButton(self.left_frame, text="Download", command=self.start_download, state="normal", fg_color="#FFD600", hover_color="#FFEA00", text_color="#333333")
+        self.download_btn.grid(row=1, column=0, padx=10, pady=(2, 2), sticky="ew")
 
         # --- Right Column: Download Options ---
         self.right_frame = ctk.CTkFrame(self)
-        self.right_frame.grid(row=1, column=1, padx=(10, 20), pady=10, sticky="nsew")
+        self.right_frame.grid(row=1, column=1, padx=(10, 20), pady=10, sticky='nsew')
         self.right_frame.grid_columnconfigure(0, weight=1)
-
-        # Format and Quality
-        self.format_quality_frame = ctk.CTkFrame(self.right_frame)
-        self.format_quality_frame.grid(row=0, column=0, padx=10, pady=10, sticky="ew")
-        self.format_quality_frame.grid_columnconfigure(1, weight=1)
-
-        ctk.CTkLabel(self.format_quality_frame, text="Format:").grid(row=0, column=0, padx=10, pady=5, sticky="w")
-        self.format_menu = ctk.CTkOptionMenu(self.format_quality_frame, variable=self.selected_format, values=["MP4", "MP3", "WebM", "MKV"])
-        self.format_menu.grid(row=0, column=1, padx=10, pady=5, sticky="ew")
-
-        ctk.CTkLabel(self.format_quality_frame, text="Quality:").grid(row=1, column=0, padx=10, pady=5, sticky="w")
-        self.quality_menu = ctk.CTkOptionMenu(self.format_quality_frame, variable=self.selected_quality, values=["Best", "1080p", "720p", "480p"])
-        self.quality_menu.grid(row=1, column=1, padx=10, pady=5, sticky="ew")
+        self.right_frame.grid_rowconfigure(0, weight=0)
+        self.right_frame.grid_rowconfigure(1, weight=0)
+        self.right_frame.grid_rowconfigure(2, weight=0)
 
         # Download Config
         self.config_frame = ctk.CTkFrame(self.right_frame)
-        self.config_frame.grid(row=1, column=0, padx=10, pady=10, sticky="ew")
+        self.config_frame.grid(row=1, column=0, padx=10, pady=(2, 2), sticky="ew")
         self.config_frame.grid_columnconfigure(0, weight=1)
 
         ctk.CTkLabel(self.config_frame, text="Download Folder:").grid(row=0, column=0, columnspan=2, padx=10, pady=5, sticky="w")
         self.folder_entry = ctk.CTkEntry(self.config_frame, textvariable=self.download_folder)
         self.folder_entry.grid(row=1, column=0, padx=(10,5), pady=5, sticky="ew")
-        self.browse_btn = ctk.CTkButton(self.config_frame, text="Browse", command=self.browse_folder, width=80)
+        self.browse_btn = ctk.CTkButton(self.config_frame, text="Browse", command=self.browse_folder, width=80, fg_color="#FFD600", hover_color="#FFEA00", text_color="#333333")
         self.browse_btn.grid(row=1, column=1, padx=(0,10), pady=5)
 
         # Download Actions
@@ -164,99 +161,18 @@ class YouTubeDownloaderApp(ctk.CTk):
         self.download_frame.grid(row=2, column=0, padx=10, pady=10, sticky="ew")
         self.download_frame.grid_columnconfigure(0, weight=1)
 
-        self.download_btn = ctk.CTkButton(self.download_frame, text="Download", command=self.start_download, state="disabled")
-        self.download_btn.grid(row=0, column=0, columnspan=3, padx=10, pady=10, sticky="ew")
-
-        self.progress = ctk.CTkProgressBar(self.download_frame)
+        self.progress = ctk.CTkProgressBar(self.download_frame, fg_color="#FFF9C4", progress_color="#FFD600")
         self.progress.set(0)
         self.progress.grid(row=1, column=0, columnspan=3, padx=10, pady=5, sticky="ew")
         
         self.status_label = ctk.CTkLabel(self.download_frame, text="")
         self.status_label.grid(row=2, column=0, columnspan=3, padx=10, pady=5)
 
-        # --- Bottom Tabs ---
-        self.tab_view = ctk.CTkTabview(self)
-        self.tab_view.grid(row=2, column=0, columnspan=2, padx=20, pady=(10,20), sticky="nsew")
-        self.tab_view.add("Download Queue")
-        self.tab_view.add("History")
-        self.tab_view.add("Batch Download")
-
-        ctk.CTkLabel(self.tab_view.tab("Download Queue"), text="Download queue management will be here.").pack(padx=20, pady=20)
-        ctk.CTkLabel(self.tab_view.tab("History"), text="Download history will be here.").pack(padx=20, pady=20)
-        ctk.CTkLabel(self.tab_view.tab("Batch Download"), text="Playlist/batch download options will be here.").pack(padx=20, pady=20)
-
-    def fetch_video_info(self):
-        # Clear previous info
-        self.thumbnail_label.configure(image=None, text="")
-        self.title_info.grid_forget()
-        self.author_info.grid_forget()
-        self.length_info.grid_forget()
-        self.views_info.grid_forget()
-
-        url = self.url_entry.get().strip()
-        if not url:
-            messagebox.showerror("Error", "Please enter a YouTube URL.")
-            return
-        self.status_label.configure(text="Fetching video info...")
-        self.download_btn.configure(state="disabled")
-        threading.Thread(target=self._fetch_info_thread, args=(url,), daemon=True).start()
-
-    def _fetch_info_thread(self, url):
-        ydl_opts = {"quiet": True, "skip_download": True, "ffmpeg_location": self.ffmpeg_path}
-        try:
-            with yt_dlp.YoutubeDL(ydl_opts) as ydl:
-                info = ydl.extract_info(url, download=False)
-            self.video_info = info
-            self.show_video_info(info)
-            self.status_label.configure(text="Video info loaded.")
-            self.download_btn.configure(state="normal")
-        except Exception as e:
-            self.status_label.configure(text=f"Error: {e}")
-            messagebox.showerror("Error", f"Failed to fetch video info.\n{e}")
-
-    def show_video_info(self, info):
-        # Thumbnail
-        thumb_url = info.get("thumbnail")
-        if thumb_url:
-            try:
-                response = requests.get(thumb_url)
-                img_data = response.content
-                img = Image.open(io.BytesIO(img_data)).resize((320, 180))
-                self.thumbnail_img = ctk.CTkImage(light_image=img, dark_image=img, size=(320, 180))
-                self.thumbnail_label.configure(image=self.thumbnail_img, text="")
-            except Exception:
-                self.thumbnail_label.configure(text="[Thumbnail not available]", image=None)
-        else:
-            self.thumbnail_label.configure(text="[Thumbnail not available]", image=None)
-        
-        # Info
-        self.title_info.configure(text=f"Title: {info.get('title', 'N/A')}")
-        self.author_info.configure(text=f"Channel: {info.get('uploader', 'N/A')}")
-        mins, secs = divmod(info.get('duration', 0), 60)
-        self.length_info.configure(text=f"Length: {mins}m {secs}s")
-        self.views_info.configure(text=f"Views: {info.get('view_count', 'N/A'):,}")
-
-        # Place labels on grid
-        self.title_info.grid(row=1, column=0, sticky="ew", padx=10, pady=2)
-        self.author_info.grid(row=2, column=0, sticky="ew", padx=10, pady=2)
-        self.length_info.grid(row=3, column=0, sticky="ew", padx=10, pady=2)
-        self.views_info.grid(row=4, column=0, sticky="ew", padx=10, pady=2)
-
-        # Quality options
-        formats = info.get('formats', [])
-        video_options = set()
-        for f in formats:
-            if f.get('vcodec') not in [None, 'none'] and f.get('height') is not None:
-                video_options.add(f"{f['height']}p")
-        
-        if video_options:
-            # Sort by integer value of resolution
-            sorted_options = sorted(list(video_options), key=lambda x: int(x.replace('p','')), reverse=True)
-            self.quality_menu.configure(values=sorted_options)
-            self.selected_quality.set(sorted_options[0])
-        else:
-            self.quality_menu.configure(values=["No qualities found"])
-            self.selected_quality.set("No qualities found")
+        # Remove the bottom tabview
+        # Add a frame for active downloads at the bottom
+        self.active_downloads_frame = ctk.CTkFrame(self)
+        self.active_downloads_frame.grid(row=2, column=0, columnspan=2, padx=20, pady=(2, 10), sticky="nsew")
+        self.active_download_rows = {}  # key: url, value: widgets
 
     def browse_folder(self):
         folder = filedialog.askdirectory()
@@ -264,63 +180,184 @@ class YouTubeDownloaderApp(ctk.CTk):
             self.download_folder.set(folder)
 
     def start_download(self):
-        if not self.video_info:
-            messagebox.showerror("Error", "No video info loaded.")
+        url = self.url_entry.get().strip()
+        if not url:
+            messagebox.showerror("Error", "Please enter a YouTube URL.")
             return
         if not self.download_folder.get():
             messagebox.showerror("Error", "Please select a download folder.")
             return
-        self.status_label.configure(text="Starting download...")
-        self.progress.set(0)
-        self.download_btn.configure(state="disabled")
-        threading.Thread(target=self._download_thread, daemon=True).start()
-
-    def _download_thread(self):
-        url = self.url_entry.get().strip()
-        selected_format = self.selected_format.get().lower()
-        selected_quality = self.selected_quality.get()
-
-        if selected_format in ['mp3', 'm4a']: # Audio download
-            ydl_opts = {
-                'format': 'bestaudio/best',
-                'outtmpl': f"{self.download_folder.get()}/%(title)s.%(ext)s",
-                'progress_hooks': [self.yt_progress_hook],
-                'postprocessors': [{
-                    'key': 'FFmpegExtractAudio',
-                    'preferredcodec': selected_format,
-                    'preferredquality': '192', # default quality
-                }],
-                'quiet': True,
-                'ffmpeg_location': self.ffmpeg_path,
-            }
-        else: # Video download
-            ydl_opts = {
-                'format': f'bestvideo[height<={selected_quality[:-1]}]+bestaudio/best[height<={selected_quality[:-1]}]/best',
-                'outtmpl': f"{self.download_folder.get()}/%(title)s.%(ext)s",
-                'progress_hooks': [self.yt_progress_hook],
-                'quiet': True,
-                'ffmpeg_location': self.ffmpeg_path,
-            }
-
+        # Step 7: Fetch video info (title, thumbnail, format, resolution/bitrate) before starting the download
         try:
+            with yt_dlp.YoutubeDL({'quiet': True}) as ydl:
+                info = ydl.extract_info(url, download=False)
+            title = info.get('title', url)
+            thumbnail_url = info.get('thumbnail')
+            thumb_img = None
+            if thumbnail_url:
+                try:
+                    resp = requests.get(thumbnail_url)
+                    img_data = resp.content
+                    img = Image.open(io.BytesIO(img_data)).resize((80, 45))
+                    thumb_img = ImageTk.PhotoImage(img)
+                except Exception:
+                    thumb_img = None
+            fmt = self.selected_format_option.get()
+            res_or_bitrate = "-"
+            if fmt.startswith('Video: '):
+                match = re.search(r'(\d{3,4}p)', fmt)
+                if match:
+                    res_or_bitrate = match.group(1)
+            elif fmt.startswith('Audio: '):
+                abr = info.get('abr') or info.get('bitrate')
+                if abr:
+                    res_or_bitrate = f"{abr} kbps"
+        except Exception as e:
+            title = url
+            thumb_img = None
+            fmt = self.selected_format_option.get()
+            res_or_bitrate = "-"
+        # Add time started
+        time_started = datetime.datetime.now().strftime('%H:%M:%S')
+        row_widgets = self.create_download_row(url, title, thumb_img, fmt, res_or_bitrate, time_started)
+        self.active_download_rows[url] = row_widgets
+        threading.Thread(target=self._download_thread, args=(url, title, row_widgets), daemon=True).start()
+        # Clear the URL entry after starting the download
+        self.url_entry.delete(0, tk.END)
+
+    def create_download_row(self, url, title, thumb_img, fmt, res_or_bitrate, time_started):
+        row = len(self.active_download_rows)
+        grid_row_top = row * 2
+        grid_row_bottom = row * 2 + 1
+
+        # Top row
+        thumb_label = None
+        if thumb_img:
+            thumb_label = ctk.CTkLabel(self.active_downloads_frame, image=thumb_img, text="")
+            thumb_label.image = thumb_img
+            thumb_label.grid(row=grid_row_top, column=0, padx=5, pady=2, sticky="w")
+        title_label = ctk.CTkLabel(self.active_downloads_frame, text=title, anchor="w", width=300)
+        title_label.grid(row=grid_row_top, column=1, padx=5, pady=2, sticky="w")
+        format_label = ctk.CTkLabel(self.active_downloads_frame, text=fmt, width=100)
+        format_label.grid(row=grid_row_top, column=2, padx=5, pady=2)
+        res_label = ctk.CTkLabel(self.active_downloads_frame, text=res_or_bitrate, width=80)
+        res_label.grid(row=grid_row_top, column=3, padx=5, pady=2)
+        progress = ctk.CTkProgressBar(self.active_downloads_frame, fg_color="#FFF9C4", progress_color="#FFD600", width=200)
+        progress.set(0)
+        progress.grid(row=grid_row_top, column=4, padx=5, pady=2, sticky="ew")
+        percent_label = ctk.CTkLabel(self.active_downloads_frame, text="0%", width=50)
+        percent_label.grid(row=grid_row_top, column=5, padx=5, pady=2)
+        status_label = ctk.CTkLabel(self.active_downloads_frame, text="Queued", width=80)
+        status_label.grid(row=grid_row_top, column=6, padx=5, pady=2)
+
+        # Bottom row
+        speed_label = ctk.CTkLabel(self.active_downloads_frame, text="Speed: 0 KB/s", width=100)
+        speed_label.grid(row=grid_row_bottom, column=1, padx=5, pady=2)
+        size_label = ctk.CTkLabel(self.active_downloads_frame, text="0 MB / 0 MB", width=120)
+        size_label.grid(row=grid_row_bottom, column=2, padx=5, pady=2)
+        eta_label = ctk.CTkLabel(self.active_downloads_frame, text="ETA: -", width=80)
+        eta_label.grid(row=grid_row_bottom, column=3, padx=5, pady=2)
+        time_label = ctk.CTkLabel(self.active_downloads_frame, text=time_started, width=70)
+        time_label.grid(row=grid_row_bottom, column=4, padx=5, pady=2)
+        cancel_btn = ctk.CTkButton(self.active_downloads_frame, text="Cancel", width=60, state="normal")
+        cancel_btn.grid(row=grid_row_bottom, column=5, padx=5, pady=2)
+        retry_btn = ctk.CTkButton(self.active_downloads_frame, text="Retry", width=60, state="disabled")
+        retry_btn.grid(row=grid_row_bottom, column=6, padx=5, pady=2)
+        open_btn = ctk.CTkButton(self.active_downloads_frame, text="Open Folder", width=90, state="disabled")
+        open_btn.grid(row=grid_row_bottom, column=7, padx=5, pady=2)
+
+        return {
+            "title_label": title_label, "progress": progress, "percent_label": percent_label,
+            "speed_label": speed_label, "size_label": size_label, "thumb_label": thumb_label,
+            "status_label": status_label, "eta_label": eta_label, "format_label": format_label,
+            "res_label": res_label, "time_label": time_label, "cancel_btn": cancel_btn,
+            "retry_btn": retry_btn, "open_btn": open_btn
+        }
+    def _download_thread(self, url, title, row_widgets):
+        row_widgets["status_label"].configure(text="Downloading")
+        selected_option = self.selected_format_option.get()
+        def progress_hook(d):
+            if d['status'] == 'downloading':
+                total = d.get('total_bytes') or d.get('total_bytes_estimate') or 1
+                downloaded = d.get('downloaded_bytes', 0)
+                percent = downloaded / total
+                row_widgets["progress"].set(percent)
+                row_widgets["percent_label"].configure(text=f"{int(percent*100)}%")
+                speed = d.get('speed', 0)
+                speed_str = f"Speed: {speed/1024:.1f} KB/s" if speed else "Speed: -"
+                row_widgets["speed_label"].configure(text=speed_str)
+                size_str = f"{downloaded/1024/1024:.2f} MB / {total/1024/1024:.2f} MB"
+                row_widgets["size_label"].configure(text=size_str)
+                row_widgets["status_label"].configure(text="Downloading")
+                eta = d.get('eta', None)
+                if eta is not None:
+                    row_widgets["eta_label"].configure(text=f"ETA: {eta}s")
+                else:
+                    row_widgets["eta_label"].configure(text="ETA: -")
+            elif d['status'] == 'finished':
+                row_widgets["progress"].set(1)
+                row_widgets["status_label"].configure(text="Merging")
+                row_widgets["eta_label"].configure(text="ETA: -")
+        try:
+            if selected_option.startswith("Audio: "):
+                audio_format = selected_option.replace("Audio: ", "").lower()
+                ydl_opts = {
+                    'format': 'bestaudio/best',
+                    'outtmpl': f"{self.download_folder.get()}/%(title)s.%(ext)s",
+                    'progress_hooks': [progress_hook],
+                    'postprocessors': [{
+                        'key': 'FFmpegExtractAudio',
+                        'preferredcodec': audio_format,
+                        'preferredquality': '192',
+                    }],
+                    'quiet': True,
+                    'ffmpeg_location': self.ffmpeg_path,
+                }
+            elif selected_option.startswith("Video: "):
+                video_info = selected_option.replace("Video: ", "")
+                if "MP4" in video_info:
+                    quality = video_info.split("(")[-1].replace(")", "")
+                    height = quality.replace("p", "").replace("K", "000")
+                    ydl_opts = {
+                        'format': f'bestvideo[height<={height}]+bestaudio/best[height<={height}]/best',
+                        'outtmpl': f"{self.download_folder.get()}/%(title)s.%(ext)s",
+                        'progress_hooks': [progress_hook],
+                        'quiet': True,
+                        'ffmpeg_location': self.ffmpeg_path,
+                    }
+                elif "WEBM" in video_info:
+                    ydl_opts = {
+                        'format': 'bestvideo[ext=webm]+bestaudio[ext=webm]/best[ext=webm]',
+                        'outtmpl': f"{self.download_folder.get()}/%(title)s.%(ext)s",
+                        'progress_hooks': [progress_hook],
+                        'quiet': True,
+                        'ffmpeg_location': self.ffmpeg_path,
+                    }
+                else:
+                    ydl_opts = {
+                        'format': 'best',
+                        'outtmpl': f"{self.download_folder.get()}/%(title)s.%(ext)s",
+                        'progress_hooks': [progress_hook],
+                        'quiet': True,
+                        'ffmpeg_location': self.ffmpeg_path,
+                    }
+            else:
+                ydl_opts = {
+                    'format': 'best',
+                    'outtmpl': f"{self.download_folder.get()}/%(title)s.%(ext)s",
+                    'progress_hooks': [progress_hook],
+                    'quiet': True,
+                    'ffmpeg_location': self.ffmpeg_path,
+                }
             with yt_dlp.YoutubeDL(ydl_opts) as ydl:
                 ydl.download([url])
-            self.status_label.configure(text="Download complete!")
+            row_widgets["status_label"].configure(text="Complete")
+            row_widgets["open_btn"].configure(state="normal")
         except Exception as e:
-            self.status_label.configure(text=f"Error: {e}")
-            messagebox.showerror("Error", f"Download failed.\n{e}")
+            row_widgets["status_label"].configure(text="Error")
+            row_widgets["retry_btn"].configure(state="normal")
+            row_widgets["open_btn"].configure(state="disabled")
         self.download_btn.configure(state="normal")
-
-    def yt_progress_hook(self, d):
-        if d['status'] == 'downloading':
-            total = d.get('total_bytes') or d.get('total_bytes_estimate') or 1
-            downloaded = d.get('downloaded_bytes', 0)
-            percent = downloaded / total
-            self.progress.set(percent)
-            self.status_label.configure(text=f"Downloading... {int(percent*100)}%")
-        elif d['status'] == 'finished':
-            self.progress.set(1)
-            self.status_label.configure(text="Processing...")
 
     def toggle_mode(self):
         if self.dark_mode:
