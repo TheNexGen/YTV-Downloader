@@ -23,74 +23,68 @@ class YouTubeDownloaderApp(ctk.CTk):
         self.dark_mode = True
 
         self.create_widgets()
-        self.create_custom_menu()
-        self.apply_menu_theme()
+        self.create_menu_bar()
+        self.config(menu=self.menubar)
 
-    def create_custom_menu(self):
-        # --- Menu Bar Frame ---
-        self.menu_bar = ctk.CTkFrame(self, corner_radius=0)
-        self.menu_bar.grid(row=1, column=0, columnspan=2, sticky="ew")
+    def create_menu_bar(self):
+        menubar = Menu(self)
 
-        # --- File Menu ---
-        self.file_menu = Menu(self.menu_bar, tearoff=0)
-        self.file_menu.add_command(label="Add New Download", accelerator="Ctrl+N", command=self.placeholder_command)
-        self.file_menu.add_command(label="Import from File/Playlist", command=self.placeholder_command)
-        self.file_menu.add_command(label="Export Download List", command=self.placeholder_command)
-        self.file_menu.add_separator()
-        self.file_menu.add_command(label="Exit", command=self.quit)
-        file_button = ctk.CTkButton(self.menu_bar, text="File", command=lambda: self.show_menu(self.file_menu, file_button), corner_radius=0)
-        file_button.pack(side="left", padx=(5, 2))
+        # File Menu
+        file_menu = Menu(menubar, tearoff=0)
+        menubar.add_cascade(label="File", menu=file_menu)
+        file_menu.add_command(label="Add New Download", accelerator="Ctrl+N", command=self.placeholder_command)
+        file_menu.add_command(label="Import from File/Playlist", command=self.placeholder_command)
+        file_menu.add_command(label="Export Download List", command=self.placeholder_command)
+        file_menu.add_separator()
+        file_menu.add_command(label="Exit", command=self.quit)
 
-        # --- Edit Menu ---
-        self.edit_menu = Menu(self.menu_bar, tearoff=0)
-        self.edit_menu.add_command(label="Preferences/Settings", command=self.placeholder_command)
-        self.edit_menu.add_command(label="Clear Download History", command=self.placeholder_command)
-        self.edit_menu.add_separator()
-        self.edit_menu.add_command(label="Reset to Defaults", command=self.placeholder_command)
-        edit_button = ctk.CTkButton(self.menu_bar, text="Edit", command=lambda: self.show_menu(self.edit_menu, edit_button), corner_radius=0)
-        edit_button.pack(side="left", padx=2)
+        # Edit Menu
+        edit_menu = Menu(menubar, tearoff=0)
+        menubar.add_cascade(label="Edit", menu=edit_menu)
+        edit_menu.add_command(label="Preferences/Settings", command=self.placeholder_command)
+        edit_menu.add_command(label="Clear Download History", command=self.placeholder_command)
+        edit_menu.add_separator()
+        edit_menu.add_command(label="Reset to Defaults", command=self.placeholder_command)
 
-        # --- View Menu ---
-        self.view_menu = Menu(self.menu_bar, tearoff=0)
-        self.view_menu.add_command(label="Toggle Dark/Light Mode", command=self.toggle_mode)
-        self.view_menu.add_command(label="Show/Hide Download Queue", command=self.placeholder_command)
-        self.view_menu.add_command(label="Show Logs / Output Console", command=self.placeholder_command)
-        self.view_menu.add_separator()
-        self.view_menu.add_command(label="Fullscreen Mode", command=self.toggle_fullscreen)
-        view_button = ctk.CTkButton(self.menu_bar, text="View", command=lambda: self.show_menu(self.view_menu, view_button), corner_radius=0)
-        view_button.pack(side="left", padx=2)
+        # View Menu
+        view_menu = Menu(menubar, tearoff=0)
+        menubar.add_cascade(label="View", menu=view_menu)
+        view_menu.add_command(label="Toggle Dark/Light Mode", command=self.toggle_mode)
+        view_menu.add_command(label="Show/Hide Download Queue", command=self.placeholder_command)
+        view_menu.add_command(label="Show Logs / Output Console", command=self.placeholder_command)
+        view_menu.add_separator()
+        view_menu.add_command(label="Fullscreen Mode", command=self.toggle_fullscreen)
 
-        # --- Tools Menu ---
-        self.tools_menu = Menu(self.menu_bar, tearoff=0)
-        self.tools_menu.add_command(label="Batch Downloader", command=self.placeholder_command)
-        self.tools_menu.add_command(label="Audio Extractor", command=self.placeholder_command)
-        self.tools_menu.add_command(label="File Format Converter", command=self.placeholder_command)
-        self.tools_menu.add_command(label="Subtitle Downloader", command=self.placeholder_command)
-        self.tools_menu.add_separator()
-        self.tools_menu.add_command(label="Proxy Configuration", command=self.placeholder_command)
-        tools_button = ctk.CTkButton(self.menu_bar, text="Tools", command=lambda: self.show_menu(self.tools_menu, tools_button), corner_radius=0)
-        tools_button.pack(side="left", padx=2)
+        # Tools Menu
+        tools_menu = Menu(menubar, tearoff=0)
+        menubar.add_cascade(label="Tools", menu=tools_menu)
+        tools_menu.add_command(label="Batch Downloader", command=self.placeholder_command)
+        tools_menu.add_command(label="Audio Extractor", command=self.placeholder_command)
+        tools_menu.add_command(label="File Format Converter", command=self.placeholder_command)
+        tools_menu.add_command(label="Subtitle Downloader", command=self.placeholder_command)
+        tools_menu.add_separator()
+        tools_menu.add_command(label="Proxy Configuration", command=self.placeholder_command)
 
-        # --- Downloads Menu ---
-        self.downloads_menu = Menu(self.menu_bar, tearoff=0)
-        self.downloads_menu.add_command(label="Pause All Downloads", command=self.placeholder_command)
-        self.downloads_menu.add_command(label="Resume All", command=self.placeholder_command)
-        self.downloads_menu.add_command(label="Cancel All", command=self.placeholder_command)
-        self.downloads_menu.add_separator()
-        self.downloads_menu.add_command(label="Open Download Folder", command=self.browse_folder)
-        self.downloads_menu.add_command(label="Retry Failed Downloads", command=self.placeholder_command)
-        downloads_button = ctk.CTkButton(self.menu_bar, text="Downloads", command=lambda: self.show_menu(self.downloads_menu, downloads_button), corner_radius=0)
-        downloads_button.pack(side="left", padx=2)
+        # Downloads Menu
+        downloads_menu = Menu(menubar, tearoff=0)
+        menubar.add_cascade(label="Downloads", menu=downloads_menu)
+        downloads_menu.add_command(label="Pause All Downloads", command=self.placeholder_command)
+        downloads_menu.add_command(label="Resume All", command=self.placeholder_command)
+        downloads_menu.add_command(label="Cancel All", command=self.placeholder_command)
+        downloads_menu.add_separator()
+        downloads_menu.add_command(label="Open Download Folder", command=self.browse_folder)
+        downloads_menu.add_command(label="Retry Failed Downloads", command=self.placeholder_command)
 
-        # --- Help Menu ---
-        self.help_menu = Menu(self.menu_bar, tearoff=0)
-        self.help_menu.add_command(label="User Guide", command=self.placeholder_command)
-        self.help_menu.add_command(label="Check for Updates", command=self.placeholder_command)
-        self.help_menu.add_command(label="Report a Bug", command=self.placeholder_command)
-        self.help_menu.add_separator()
-        self.help_menu.add_command(label="About This App", command=self.show_about)
-        help_button = ctk.CTkButton(self.menu_bar, text="Help", command=lambda: self.show_menu(self.help_menu, help_button), corner_radius=0)
-        help_button.pack(side="left", padx=(2, 5))
+        # Help Menu
+        help_menu = Menu(menubar, tearoff=0)
+        menubar.add_cascade(label="Help", menu=help_menu)
+        help_menu.add_command(label="User Guide", command=self.placeholder_command)
+        help_menu.add_command(label="Check for Updates", command=self.placeholder_command)
+        help_menu.add_command(label="Report a Bug", command=self.placeholder_command)
+        help_menu.add_separator()
+        help_menu.add_command(label="About This App", command=self.show_about)
+
+        self.menubar = menubar
 
     def show_menu(self, menu, button):
         x = button.winfo_rootx()
@@ -124,7 +118,7 @@ class YouTubeDownloaderApp(ctk.CTk):
         self.url_entry = ctk.CTkEntry(self.left_frame, placeholder_text="Paste YouTube video URL here...")
         self.url_entry.grid(row=0, column=0, padx=10, pady=10, sticky="ew")
 
-        self.fetch_btn = ctk.CTkButton(self.left_frame, text="Fetch Video Info", command=self.fetch_video_info)
+        self.fetch_btn = ctk.CTkButton(self.left_frame, text="Fetch Video Info", command=self.fetch_video_info, fg_color="#FFD600", hover_color="#FFEA00", text_color="#333333")
         self.fetch_btn.grid(row=1, column=0, padx=10, pady=5)
 
         self.media_info_frame = ctk.CTkScrollableFrame(self.left_frame)
@@ -151,11 +145,21 @@ class YouTubeDownloaderApp(ctk.CTk):
         self.format_quality_frame.grid_columnconfigure(1, weight=1)
 
         ctk.CTkLabel(self.format_quality_frame, text="Format:").grid(row=0, column=0, padx=10, pady=5, sticky="w")
-        self.format_menu = ctk.CTkOptionMenu(self.format_quality_frame, variable=self.selected_format, values=["MP4", "MP3", "WebM", "MKV"])
+        self.format_menu = ctk.CTkOptionMenu(
+            self.format_quality_frame,
+            variable=self.selected_format,
+            values=["MP4", "MP3", "WebM", "MKV"],
+            fg_color="#FFD600", button_color="#FFD600", button_hover_color="#FFEA00", text_color="#333333"
+        )
         self.format_menu.grid(row=0, column=1, padx=10, pady=5, sticky="ew")
 
         ctk.CTkLabel(self.format_quality_frame, text="Quality:").grid(row=1, column=0, padx=10, pady=5, sticky="w")
-        self.quality_menu = ctk.CTkOptionMenu(self.format_quality_frame, variable=self.selected_quality, values=["Best", "1080p", "720p", "480p"])
+        self.quality_menu = ctk.CTkOptionMenu(
+            self.format_quality_frame,
+            variable=self.selected_quality,
+            values=["Best", "1080p", "720p", "480p"],
+            fg_color="#FFD600", button_color="#FFD600", button_hover_color="#FFEA00", text_color="#333333"
+        )
         self.quality_menu.grid(row=1, column=1, padx=10, pady=5, sticky="ew")
 
         # Download Config
@@ -166,7 +170,7 @@ class YouTubeDownloaderApp(ctk.CTk):
         ctk.CTkLabel(self.config_frame, text="Download Folder:").grid(row=0, column=0, columnspan=2, padx=10, pady=5, sticky="w")
         self.folder_entry = ctk.CTkEntry(self.config_frame, textvariable=self.download_folder)
         self.folder_entry.grid(row=1, column=0, padx=(10,5), pady=5, sticky="ew")
-        self.browse_btn = ctk.CTkButton(self.config_frame, text="Browse", command=self.browse_folder, width=80)
+        self.browse_btn = ctk.CTkButton(self.config_frame, text="Browse", command=self.browse_folder, width=80, fg_color="#FFD600", hover_color="#FFEA00", text_color="#333333")
         self.browse_btn.grid(row=1, column=1, padx=(0,10), pady=5)
 
         # Download Actions
@@ -174,7 +178,7 @@ class YouTubeDownloaderApp(ctk.CTk):
         self.download_frame.grid(row=2, column=0, padx=10, pady=10, sticky="ew")
         self.download_frame.grid_columnconfigure(0, weight=1)
 
-        self.download_btn = ctk.CTkButton(self.download_frame, text="Download", command=self.start_download, state="disabled")
+        self.download_btn = ctk.CTkButton(self.download_frame, text="Download", command=self.start_download, state="disabled", fg_color="#FFD600", hover_color="#FFEA00", text_color="#333333")
         self.download_btn.grid(row=0, column=0, columnspan=3, padx=10, pady=10, sticky="ew")
 
         self.progress = ctk.CTkProgressBar(self.download_frame)
@@ -185,7 +189,15 @@ class YouTubeDownloaderApp(ctk.CTk):
         self.status_label.grid(row=2, column=0, columnspan=3, padx=10, pady=5)
 
         # --- Bottom Tabs ---
-        self.tab_view = ctk.CTkTabview(self)
+        self.tab_view = ctk.CTkTabview(
+            self,
+            segmented_button_fg_color="#333333",  # main yellow (like blue default)
+            segmented_button_selected_color="#FFEA00",  # darker yellow for selected (like #144870)
+            segmented_button_unselected_color="#333333",  # main yellow for unselected (like #1f6aa5)
+            segmented_button_selected_hover_color="#CFC200",  # hover on selected (like #1a5a8a)
+            segmented_button_unselected_hover_color="#BFA800",  # hover on unselected (like #1a5a8a)
+            text_color="#ffffff"  # white text for better contrast FFEA00
+        )
         self.tab_view.grid(row=3, column=0, columnspan=2, padx=20, pady=(10,20), sticky="nsew")
         self.tab_view.add("Download Queue")
         self.tab_view.add("History")
@@ -332,7 +344,7 @@ class YouTubeDownloaderApp(ctk.CTk):
         else:
             ctk.set_appearance_mode("Dark")
             self.dark_mode = True
-        self.apply_menu_theme()
+
 
     def apply_menu_theme(self):
         if self.dark_mode:
