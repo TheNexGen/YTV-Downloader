@@ -24,81 +24,75 @@ class YouTubeDownloaderApp(ctk.CTk):
         self.selected_format_option = tk.StringVar(value="Video: MP4 (720p)")
         self.dark_mode = True
 
-        self.create_menu()
+        self.menubar = None
         self.create_widgets()
-        self.create_custom_menu()
-        self.apply_menu_theme()
+        self.create_menu_bar()
+        self.config(menu=self.menubar)
 
-    def create_custom_menu(self):
-        # --- Menu Bar Frame ---
-        self.menu_bar = ctk.CTkFrame(self, corner_radius=0)
-        self.menu_bar.grid(row=1, column=0, columnspan=2, sticky="ew")
 
-        # --- File Menu ---
-        self.file_menu = Menu(self.menu_bar, tearoff=0)
-        self.file_menu.add_command(label="Add New Download", accelerator="Ctrl+N", command=self.placeholder_command)
-        self.file_menu.add_command(label="Import from File/Playlist", command=self.placeholder_command)
-        self.file_menu.add_command(label="Export Download List", command=self.placeholder_command)
-        self.file_menu.add_separator()
-        self.file_menu.add_command(label="Exit", command=self.quit)
-        file_button = ctk.CTkButton(self.menu_bar, text="File", command=lambda: self.show_menu(self.file_menu, file_button), corner_radius=0)
-        file_button.pack(side="left", padx=(5, 2))
 
-        # --- Edit Menu ---
-        self.edit_menu = Menu(self.menu_bar, tearoff=0)
-        self.edit_menu.add_command(label="Preferences/Settings", command=self.placeholder_command)
-        self.edit_menu.add_command(label="Clear Download History", command=self.placeholder_command)
-        self.edit_menu.add_separator()
-        self.edit_menu.add_command(label="Reset to Defaults", command=self.placeholder_command)
-        edit_button = ctk.CTkButton(self.menu_bar, text="Edit", command=lambda: self.show_menu(self.edit_menu, edit_button), corner_radius=0)
-        edit_button.pack(side="left", padx=2)
 
-        # --- View Menu ---
-        self.view_menu = Menu(self.menu_bar, tearoff=0)
-        self.view_menu.add_command(label="Toggle Dark/Light Mode", command=self.toggle_mode)
-        self.view_menu.add_command(label="Show/Hide Download Queue", command=self.placeholder_command)
-        self.view_menu.add_command(label="Show Logs / Output Console", command=self.placeholder_command)
-        self.view_menu.add_separator()
-        self.view_menu.add_command(label="Fullscreen Mode", command=self.toggle_fullscreen)
-        view_button = ctk.CTkButton(self.menu_bar, text="View", command=lambda: self.show_menu(self.view_menu, view_button), corner_radius=0)
-        view_button.pack(side="left", padx=2)
+    def create_menu_bar(self):
+        menubar = Menu(self)
 
-        # --- Tools Menu ---
-        self.tools_menu = Menu(self.menu_bar, tearoff=0)
-        self.tools_menu.add_command(label="Batch Downloader", command=self.placeholder_command)
-        self.tools_menu.add_command(label="Audio Extractor", command=self.placeholder_command)
-        self.tools_menu.add_command(label="File Format Converter", command=self.placeholder_command)
-        self.tools_menu.add_command(label="Subtitle Downloader", command=self.placeholder_command)
-        self.tools_menu.add_separator()
-        self.tools_menu.add_command(label="Proxy Configuration", command=self.placeholder_command)
-        tools_button = ctk.CTkButton(self.menu_bar, text="Tools", command=lambda: self.show_menu(self.tools_menu, tools_button), corner_radius=0)
-        tools_button.pack(side="left", padx=2)
+        # File Menu
+        file_menu = Menu(menubar, tearoff=0)
+        menubar.add_cascade(label="File", menu=file_menu)
+        file_menu.add_command(label="Add New Download", accelerator="Ctrl+N", command=self.placeholder_command)
+        file_menu.add_command(label="Import from File/Playlist", command=self.placeholder_command)
+        file_menu.add_command(label="Export Download List", command=self.placeholder_command)
+        file_menu.add_separator()
+        file_menu.add_command(label="Exit", command=self.quit)
 
-        # --- Downloads Menu ---
-        self.downloads_menu = Menu(self.menu_bar, tearoff=0)
-        self.downloads_menu.add_command(label="Pause All Downloads", command=self.placeholder_command)
-        self.downloads_menu.add_command(label="Resume All", command=self.placeholder_command)
-        self.downloads_menu.add_command(label="Cancel All", command=self.placeholder_command)
-        self.downloads_menu.add_separator()
-        self.downloads_menu.add_command(label="Open Download Folder", command=self.browse_folder)
-        self.downloads_menu.add_command(label="Retry Failed Downloads", command=self.placeholder_command)
-        downloads_button = ctk.CTkButton(self.menu_bar, text="Downloads", command=lambda: self.show_menu(self.downloads_menu, downloads_button), corner_radius=0)
-        downloads_button.pack(side="left", padx=2)
+        # Edit Menu
+        edit_menu = Menu(menubar, tearoff=0)
+        menubar.add_cascade(label="Edit", menu=edit_menu)
+        edit_menu.add_command(label="Preferences/Settings", command=self.placeholder_command)
+        edit_menu.add_command(label="Clear Download History", command=self.placeholder_command)
+        edit_menu.add_separator()
+        edit_menu.add_command(label="Reset to Defaults", command=self.placeholder_command)
 
-        # --- Help Menu ---
-        self.help_menu = Menu(self.menu_bar, tearoff=0)
-        self.help_menu.add_command(label="User Guide", command=self.placeholder_command)
-        self.help_menu.add_command(label="Check for Updates", command=self.placeholder_command)
-        self.help_menu.add_command(label="Report a Bug", command=self.placeholder_command)
-        self.help_menu.add_separator()
-        self.help_menu.add_command(label="About This App", command=self.show_about)
-        help_button = ctk.CTkButton(self.menu_bar, text="Help", command=lambda: self.show_menu(self.help_menu, help_button), corner_radius=0)
-        help_button.pack(side="left", padx=(2, 5))
+        # View Menu
+        view_menu = Menu(menubar, tearoff=0)
+        menubar.add_cascade(label="View", menu=view_menu)
+        view_menu.add_command(label="Toggle Dark/Light Mode", command=self.toggle_mode)
+        view_menu.add_command(label="Show/Hide Download Queue", command=self.placeholder_command)
+        view_menu.add_command(label="Show Logs / Output Console", command=self.placeholder_command)
+        view_menu.add_separator()
+        view_menu.add_command(label="Fullscreen Mode", command=self.toggle_fullscreen)
 
-    def show_menu(self, menu, button):
-        x = button.winfo_rootx()
-        y = button.winfo_rooty() + button.winfo_height()
-        menu.tk_popup(x, y)
+        # Tools Menu
+        tools_menu = Menu(menubar, tearoff=0)
+        menubar.add_cascade(label="Tools", menu=tools_menu)
+        tools_menu.add_command(label="Batch Downloader", command=self.placeholder_command)
+        tools_menu.add_command(label="Audio Extractor", command=self.placeholder_command)
+        tools_menu.add_command(label="File Format Converter", command=self.placeholder_command)
+        tools_menu.add_command(label="Subtitle Downloader", command=self.placeholder_command)
+        tools_menu.add_separator()
+        tools_menu.add_command(label="Proxy Configuration", command=self.placeholder_command)
+
+        # Downloads Menu
+        downloads_menu = Menu(menubar, tearoff=0)
+        menubar.add_cascade(label="Downloads", menu=downloads_menu)
+        downloads_menu.add_command(label="Pause All Downloads", command=self.placeholder_command)
+        downloads_menu.add_command(label="Resume All", command=self.placeholder_command)
+        downloads_menu.add_command(label="Cancel All", command=self.placeholder_command)
+        downloads_menu.add_separator()
+        downloads_menu.add_command(label="Open Download Folder", command=self.browse_folder)
+        downloads_menu.add_command(label="Retry Failed Downloads", command=self.placeholder_command)
+
+        # Help Menu
+        help_menu = Menu(menubar, tearoff=0)
+        menubar.add_cascade(label="Help", menu=help_menu)
+        help_menu.add_command(label="User Guide", command=self.placeholder_command)
+        help_menu.add_command(label="Check for Updates", command=self.placeholder_command)
+        help_menu.add_command(label="Report a Bug", command=self.placeholder_command)
+        help_menu.add_separator()
+        help_menu.add_command(label="About This App", command=self.show_about)
+
+        self.menubar = menubar
+
+    # Removed menu bar show/hide logic; menu bar is always visible
 
     def create_widgets(self):
         # Main grid layout: let both cards fill 50% of the row and expand vertically
@@ -118,6 +112,7 @@ class YouTubeDownloaderApp(ctk.CTk):
         self.theme_switch = ctk.CTkSwitch(self.top_frame, text="Light/Dark", command=self.toggle_mode)
         self.theme_switch.grid(row=0, column=1, padx=10, pady=10, sticky="e")
         self.theme_switch.select()
+        # Removed menu bar toggle button; menu bar is always visible
 
         # --- Left Column: Input and Video Info ---
         self.left_frame = ctk.CTkFrame(self)
@@ -379,14 +374,6 @@ class YouTubeDownloaderApp(ctk.CTk):
             self.dark_mode = True
         self.apply_menu_theme()
 
-    def apply_menu_theme(self):
-        if self.dark_mode:
-            colors = {'bg': '#2B2B2B', 'fg': '#DCE4EE', 'activebackground': '#343638', 'activeforeground': '#DCE4EE'}
-        else:
-            colors = {'bg': '#EBEBEB', 'fg': '#1B1B1B', 'activebackground': '#DBDBDB', 'activeforeground': '#1B1B1B'}
-
-        for menu in [self.file_menu, self.edit_menu, self.view_menu, self.tools_menu, self.downloads_menu, self.help_menu]:
-            menu.config(bg=colors['bg'], fg=colors['fg'], activebackground=colors['activebackground'], activeforeground=colors['activeforeground'])
 
     def toggle_fullscreen(self):
         self.attributes("-fullscreen", not self.attributes("-fullscreen"))
