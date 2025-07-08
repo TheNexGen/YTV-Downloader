@@ -116,7 +116,7 @@ class YouTubeDownloaderApp(ctk.CTk):
 
         # --- Left Column: Input and Video Info ---
         self.left_frame = ctk.CTkFrame(self)
-        self.left_frame.grid(row=1, column=0, padx=(20, 10), pady=10, sticky='nsew')
+        self.left_frame.grid(row=1, column=0, padx=(10, 5), pady=10, sticky='nsew')
         self.left_frame.grid_columnconfigure(0, weight=1)
         self.left_frame.grid_rowconfigure(0, weight=0)
         self.left_frame.grid_rowconfigure(1, weight=0)
@@ -145,7 +145,7 @@ class YouTubeDownloaderApp(ctk.CTk):
 
         # --- Right Column: Download Options ---
         self.right_frame = ctk.CTkFrame(self)
-        self.right_frame.grid(row=1, column=1, padx=(10, 20), pady=10, sticky='nsew')
+        self.right_frame.grid(row=1, column=1, padx=(5, 10), pady=10, sticky='new')  # Only north, east, west
         self.right_frame.grid_columnconfigure(0, weight=1)
         self.right_frame.grid_rowconfigure(0, weight=0)
         self.right_frame.grid_rowconfigure(1, weight=0)
