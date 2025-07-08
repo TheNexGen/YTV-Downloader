@@ -116,7 +116,7 @@ class YouTubeDownloaderApp(ctk.CTk):
 
         # --- Left Column: Input and Video Info ---
         self.left_frame = ctk.CTkFrame(self)
-        self.left_frame.grid(row=1, column=0, padx=(10, 5), pady=10, sticky='nsew')
+        self.left_frame.grid(row=1, column=0, padx=(5, 10), pady=10, sticky='nsew')
         self.left_frame.grid_columnconfigure(0, weight=1)
         self.left_frame.grid_rowconfigure(0, weight=0)
         self.left_frame.grid_rowconfigure(1, weight=0)
@@ -153,7 +153,7 @@ class YouTubeDownloaderApp(ctk.CTk):
 
         # Download Config
         self.config_frame = ctk.CTkFrame(self.right_frame)
-        self.config_frame.grid(row=1, column=0, padx=10, pady=(2, 2), sticky="ew")
+        self.config_frame.grid(row=1, column=0, padx=0, pady=(2, 2), sticky="ew")
         self.config_frame.grid_columnconfigure(0, weight=1)
 
         ctk.CTkLabel(self.config_frame, text="Download Folder:").grid(row=0, column=0, columnspan=2, padx=10, pady=5, sticky="w")
@@ -164,7 +164,7 @@ class YouTubeDownloaderApp(ctk.CTk):
 
         # Download Actions
         self.download_frame = ctk.CTkFrame(self.right_frame)
-        self.download_frame.grid(row=2, column=0, padx=10, pady=10, sticky="ew")
+        self.download_frame.grid(row=2, column=0, padx=0, pady=5, sticky="ew")
         self.download_frame.grid_columnconfigure(0, weight=1)
 
         self.progress = ctk.CTkProgressBar(self.download_frame, fg_color="#FFF9C4", progress_color="#FFD600")
