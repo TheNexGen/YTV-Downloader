@@ -29,77 +29,13 @@ class YouTubeDownloaderApp(ctk.CTk):
         self.create_menu_bar()
         self.config(menu=self.menubar)
 
-
-
-
     def create_menu_bar(self):
         menubar = Menu(self)
-
-<<<<<<< HEAD
         # Only Settings Menu
         settings_menu = Menu(menubar, tearoff=0)
         menubar.add_cascade(label="Settings", menu=settings_menu)
         settings_menu.add_command(label="Preferences", command=self.placeholder_command)
-=======
-        # File Menu
-        file_menu = Menu(menubar, tearoff=0)
-        menubar.add_cascade(label="File", menu=file_menu)
-        file_menu.add_command(label="Add New Download", accelerator="Ctrl+N", command=self.placeholder_command)
-        file_menu.add_command(label="Import from File/Playlist", command=self.placeholder_command)
-        file_menu.add_command(label="Export Download List", command=self.placeholder_command)
-        file_menu.add_separator()
-        file_menu.add_command(label="Exit", command=self.quit)
-
-        # Edit Menu
-        edit_menu = Menu(menubar, tearoff=0)
-        menubar.add_cascade(label="Edit", menu=edit_menu)
-        edit_menu.add_command(label="Preferences/Settings", command=self.placeholder_command)
-        edit_menu.add_command(label="Clear Download History", command=self.placeholder_command)
-        edit_menu.add_separator()
-        edit_menu.add_command(label="Reset to Defaults", command=self.placeholder_command)
-
-        # View Menu
-        view_menu = Menu(menubar, tearoff=0)
-        menubar.add_cascade(label="View", menu=view_menu)
-        view_menu.add_command(label="Toggle Dark/Light Mode", command=self.toggle_mode)
-        view_menu.add_command(label="Show/Hide Download Queue", command=self.placeholder_command)
-        view_menu.add_command(label="Show Logs / Output Console", command=self.placeholder_command)
-        view_menu.add_separator()
-        view_menu.add_command(label="Fullscreen Mode", command=self.toggle_fullscreen)
-
-        # Tools Menu
-        tools_menu = Menu(menubar, tearoff=0)
-        menubar.add_cascade(label="Tools", menu=tools_menu)
-        tools_menu.add_command(label="Batch Downloader", command=self.placeholder_command)
-        tools_menu.add_command(label="Audio Extractor", command=self.placeholder_command)
-        tools_menu.add_command(label="File Format Converter", command=self.placeholder_command)
-        tools_menu.add_command(label="Subtitle Downloader", command=self.placeholder_command)
-        tools_menu.add_separator()
-        tools_menu.add_command(label="Proxy Configuration", command=self.placeholder_command)
-
-        # Downloads Menu
-        downloads_menu = Menu(menubar, tearoff=0)
-        menubar.add_cascade(label="Downloads", menu=downloads_menu)
-        downloads_menu.add_command(label="Pause All Downloads", command=self.placeholder_command)
-        downloads_menu.add_command(label="Resume All", command=self.placeholder_command)
-        downloads_menu.add_command(label="Cancel All", command=self.placeholder_command)
-        downloads_menu.add_separator()
-        downloads_menu.add_command(label="Open Download Folder", command=self.browse_folder)
-        downloads_menu.add_command(label="Retry Failed Downloads", command=self.placeholder_command)
-
-        # Help Menu
-        help_menu = Menu(menubar, tearoff=0)
-        menubar.add_cascade(label="Help", menu=help_menu)
-        help_menu.add_command(label="User Guide", command=self.placeholder_command)
-        help_menu.add_command(label="Check for Updates", command=self.placeholder_command)
-        help_menu.add_command(label="Report a Bug", command=self.placeholder_command)
-        help_menu.add_separator()
-        help_menu.add_command(label="About This App", command=self.show_about)
->>>>>>> 42b8eea8ac877e1e749d4e503063c21e5b6f51f8
-
         self.menubar = menubar
-
-    # Removed menu bar show/hide logic; menu bar is always visible
 
     def create_widgets(self):
         # Main grid layout: let both cards fill 50% of the row and expand vertically
