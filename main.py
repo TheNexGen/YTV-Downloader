@@ -24,20 +24,82 @@ class YouTubeDownloaderApp(ctk.CTk):
         self.selected_format_option = tk.StringVar(value="Video: MP4 (720p)")
         self.dark_mode = True
 
-        # Path to bundled ffmpeg
-        self.ffmpeg_path = os.path.abspath(os.path.join(os.path.dirname(__file__), 'Tools', 'ffmpeg.exe'))
-
-        self.create_menu()
+        self.menubar = None
         self.create_widgets()
+        self.create_menu_bar()
+        self.config(menu=self.menubar)
 
-    def create_menu(self):
+
+
+
+    def create_menu_bar(self):
         menubar = Menu(self)
-        self.config(menu=menubar)
 
+<<<<<<< HEAD
         # Only Settings Menu
         settings_menu = Menu(menubar, tearoff=0)
         menubar.add_cascade(label="Settings", menu=settings_menu)
         settings_menu.add_command(label="Preferences", command=self.placeholder_command)
+=======
+        # File Menu
+        file_menu = Menu(menubar, tearoff=0)
+        menubar.add_cascade(label="File", menu=file_menu)
+        file_menu.add_command(label="Add New Download", accelerator="Ctrl+N", command=self.placeholder_command)
+        file_menu.add_command(label="Import from File/Playlist", command=self.placeholder_command)
+        file_menu.add_command(label="Export Download List", command=self.placeholder_command)
+        file_menu.add_separator()
+        file_menu.add_command(label="Exit", command=self.quit)
+
+        # Edit Menu
+        edit_menu = Menu(menubar, tearoff=0)
+        menubar.add_cascade(label="Edit", menu=edit_menu)
+        edit_menu.add_command(label="Preferences/Settings", command=self.placeholder_command)
+        edit_menu.add_command(label="Clear Download History", command=self.placeholder_command)
+        edit_menu.add_separator()
+        edit_menu.add_command(label="Reset to Defaults", command=self.placeholder_command)
+
+        # View Menu
+        view_menu = Menu(menubar, tearoff=0)
+        menubar.add_cascade(label="View", menu=view_menu)
+        view_menu.add_command(label="Toggle Dark/Light Mode", command=self.toggle_mode)
+        view_menu.add_command(label="Show/Hide Download Queue", command=self.placeholder_command)
+        view_menu.add_command(label="Show Logs / Output Console", command=self.placeholder_command)
+        view_menu.add_separator()
+        view_menu.add_command(label="Fullscreen Mode", command=self.toggle_fullscreen)
+
+        # Tools Menu
+        tools_menu = Menu(menubar, tearoff=0)
+        menubar.add_cascade(label="Tools", menu=tools_menu)
+        tools_menu.add_command(label="Batch Downloader", command=self.placeholder_command)
+        tools_menu.add_command(label="Audio Extractor", command=self.placeholder_command)
+        tools_menu.add_command(label="File Format Converter", command=self.placeholder_command)
+        tools_menu.add_command(label="Subtitle Downloader", command=self.placeholder_command)
+        tools_menu.add_separator()
+        tools_menu.add_command(label="Proxy Configuration", command=self.placeholder_command)
+
+        # Downloads Menu
+        downloads_menu = Menu(menubar, tearoff=0)
+        menubar.add_cascade(label="Downloads", menu=downloads_menu)
+        downloads_menu.add_command(label="Pause All Downloads", command=self.placeholder_command)
+        downloads_menu.add_command(label="Resume All", command=self.placeholder_command)
+        downloads_menu.add_command(label="Cancel All", command=self.placeholder_command)
+        downloads_menu.add_separator()
+        downloads_menu.add_command(label="Open Download Folder", command=self.browse_folder)
+        downloads_menu.add_command(label="Retry Failed Downloads", command=self.placeholder_command)
+
+        # Help Menu
+        help_menu = Menu(menubar, tearoff=0)
+        menubar.add_cascade(label="Help", menu=help_menu)
+        help_menu.add_command(label="User Guide", command=self.placeholder_command)
+        help_menu.add_command(label="Check for Updates", command=self.placeholder_command)
+        help_menu.add_command(label="Report a Bug", command=self.placeholder_command)
+        help_menu.add_separator()
+        help_menu.add_command(label="About This App", command=self.show_about)
+>>>>>>> 42b8eea8ac877e1e749d4e503063c21e5b6f51f8
+
+        self.menubar = menubar
+
+    # Removed menu bar show/hide logic; menu bar is always visible
 
     def create_widgets(self):
         # Main grid layout: let both cards fill 50% of the row and expand vertically
@@ -48,7 +110,7 @@ class YouTubeDownloaderApp(ctk.CTk):
         self.grid_rowconfigure(2, weight=1)
         # --- Top Bar ---
         self.top_frame = ctk.CTkFrame(self, corner_radius=0)
-        self.top_frame.grid(row=0, column=0, columnspan=2, sticky="ew", pady=(0, 10))
+        self.top_frame.grid(row=0, column=0, columnspan=2, sticky="ew")
         self.top_frame.grid_columnconfigure(0, weight=1)
 
         self.title_label = ctk.CTkLabel(self.top_frame, text="YouTube Video Downloader", font=("Arial", 20, "bold"))
@@ -56,11 +118,12 @@ class YouTubeDownloaderApp(ctk.CTk):
 
         self.theme_switch = ctk.CTkSwitch(self.top_frame, text="Light/Dark", command=self.toggle_mode)
         self.theme_switch.grid(row=0, column=1, padx=10, pady=10, sticky="e")
-        self.theme_switch.select() # Start in dark mode
+        self.theme_switch.select()
+        # Removed menu bar toggle button; menu bar is always visible
 
         # --- Left Column: Input and Video Info ---
         self.left_frame = ctk.CTkFrame(self)
-        self.left_frame.grid(row=1, column=0, padx=(20, 10), pady=10, sticky='nsew')
+        self.left_frame.grid(row=1, column=0, padx=(5, 10), pady=10, sticky='nsew')
         self.left_frame.grid_columnconfigure(0, weight=1)
         self.left_frame.grid_rowconfigure(0, weight=0)
         self.left_frame.grid_rowconfigure(1, weight=0)
@@ -89,7 +152,7 @@ class YouTubeDownloaderApp(ctk.CTk):
 
         # --- Right Column: Download Options ---
         self.right_frame = ctk.CTkFrame(self)
-        self.right_frame.grid(row=1, column=1, padx=(10, 20), pady=10, sticky='nsew')
+        self.right_frame.grid(row=1, column=1, padx=(5, 10), pady=10, sticky='new')  # Only north, east, west
         self.right_frame.grid_columnconfigure(0, weight=1)
         self.right_frame.grid_rowconfigure(0, weight=0)
         self.right_frame.grid_rowconfigure(1, weight=0)
@@ -97,7 +160,7 @@ class YouTubeDownloaderApp(ctk.CTk):
 
         # Download Config
         self.config_frame = ctk.CTkFrame(self.right_frame)
-        self.config_frame.grid(row=1, column=0, padx=10, pady=(2, 2), sticky="ew")
+        self.config_frame.grid(row=1, column=0, padx=0, pady=(2, 2), sticky="ew")
         self.config_frame.grid_columnconfigure(0, weight=1)
 
         ctk.CTkLabel(self.config_frame, text="Download Folder:").grid(row=0, column=0, columnspan=2, padx=10, pady=5, sticky="w")
@@ -108,7 +171,7 @@ class YouTubeDownloaderApp(ctk.CTk):
 
         # Download Actions
         self.download_frame = ctk.CTkFrame(self.right_frame)
-        self.download_frame.grid(row=2, column=0, padx=10, pady=10, sticky="ew")
+        self.download_frame.grid(row=2, column=0, padx=0, pady=5, sticky="ew")
         self.download_frame.grid_columnconfigure(0, weight=1)
 
         self.progress = ctk.CTkProgressBar(self.download_frame, fg_color="#FFF9C4", progress_color="#FFD600")
@@ -316,6 +379,8 @@ class YouTubeDownloaderApp(ctk.CTk):
         else:
             ctk.set_appearance_mode("Dark")
             self.dark_mode = True
+        self.apply_menu_theme()
+
 
     def toggle_fullscreen(self):
         self.attributes("-fullscreen", not self.attributes("-fullscreen"))
