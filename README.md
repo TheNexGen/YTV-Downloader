@@ -1,13 +1,11 @@
-# YouTube Video Downloader
+# YTV Downloader
 
 A YouTube video downloader for Windows, built with Python, [customtkinter](https://github.com/TomSchimansky/CustomTkinter), [yt-dlp](https://github.com/yt-dlp/yt-dlp), and [Pillow](https://python-pillow.org/).
 
 ## Features
 - Download both video and audio from YouTube
-- Choose video/audio quality and format
-- Display video thumbnail, title, and channel
+- Choose video/audio quality
 - Select download folder
-- Progress bar and status messages
 - Nice UI with dark mode toggle
 
 ## Setup
