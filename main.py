@@ -14,23 +14,7 @@ from PyQt6.QtWidgets import (
 )
 from PyQt6.QtGui import QIcon, QPixmap, QFont, QAction
 from PyQt6.QtCore import Qt, QTimer, pyqtSignal
-from PyQt6.QtSvgWidgets import QSvgWidget
-
-class HoverIconButton(QToolButton):
-    def __init__(self, icon_path_default, icon_path_hover, *args, **kwargs):
-        super().__init__(*args, **kwargs)
-        self.icon_path_default = icon_path_default
-        self.icon_path_hover = icon_path_hover
-        self.setIcon(QIcon(self.icon_path_default))
-        self.setMouseTracking(True)
-
-    def enterEvent(self, event):
-        self.setIcon(QIcon(self.icon_path_hover))
-        super().enterEvent(event)
-
-    def leaveEvent(self, event):
-        self.setIcon(QIcon(self.icon_path_default))
-        super().leaveEvent(event)
+import json
 
 class DownloadRow(QWidget):
     update_progress_signal = pyqtSignal(int, str, str, str, str)
@@ -89,19 +73,22 @@ class DownloadRow(QWidget):
         layout.addWidget(self.time_label, 1, 4)
         
         # Icon buttons (32px each)
-        self.cancel_btn = HoverIconButton("icons/cancel_gray.svg", "icons/cancel_white.svg")
+        self.cancel_btn = QToolButton()
+        self.cancel_btn.setIcon(QIcon.fromTheme("process-stop"))  # Use system icon
         self.cancel_btn.setToolTip("Cancel")
         self.cancel_btn.setFixedSize(32, 32)
         self.cancel_btn.setEnabled(True)
         layout.addWidget(self.cancel_btn, 1, 5)
         
-        self.retry_btn = HoverIconButton("icons/retry_gray.svg", "icons/retry_white.svg")
+        self.retry_btn = QToolButton()
+        self.retry_btn.setIcon(QIcon.fromTheme("view-refresh"))  # Use system icon
         self.retry_btn.setToolTip("Retry")
         self.retry_btn.setFixedSize(32, 32)
         self.retry_btn.setEnabled(False)
         layout.addWidget(self.retry_btn, 1, 6)
         
-        self.open_btn = HoverIconButton("icons/folder_gray.svg", "icons/folder_white.svg")
+        self.open_btn = QToolButton()
+        self.open_btn.setIcon(QIcon.fromTheme("folder-open"))  # Use system icon
         self.open_btn.setToolTip("Open Folder")
         self.open_btn.setFixedSize(32, 32)
         self.open_btn.setEnabled(False)
@@ -112,25 +99,26 @@ class DownloadRow(QWidget):
             btn.setStyleSheet("""
                 QToolButton {
                     border: none;
-                    background: transparent;
-                    color: #ffffff;
-                    padding: 0px;
+                    border-radius: 16px;
+                    background: #FFD600;
+                    color: #333;
                 }
                 QToolButton:hover {
-                    background: transparent;
-                    color: #ffffff;
-                }
-                QToolButton:pressed {
-                    background: transparent;
-                    color: #cccccc;
+                    background: #FFEA00;
                 }
                 QToolButton:disabled {
-                    background: transparent;
-                    color: #888888;
+                    background: #e0e0e0;
+                    color: #888;
                 }
             """)
             btn.setSizePolicy(QSizePolicy.Policy.Fixed, QSizePolicy.Policy.Fixed)
         
+        self.progress = QProgressBar()
+        self.progress.setValue(0)
+        self.progress.setFixedHeight(8)
+        self.progress.setTextVisible(False)
+        layout.addWidget(self.progress, 0, 3, 2, 1)
+
         self.setSizePolicy(QSizePolicy.Policy.Expanding, QSizePolicy.Policy.Fixed)
         layout.setColumnStretch(8, 1)  # Add stretch at the end to prevent squishing
         self.setLayout(layout)
@@ -139,6 +127,7 @@ class DownloadRow(QWidget):
     def update_progress(self, percent, percent_text, speed_str, size_str, eta_str):
         if speed_str.startswith("Speed: "):
             speed_str = speed_str.replace("Speed: ", "")
+        self.progress.setValue(percent)
         self.percent_label.setText(percent_text)
         self.speed_label.setText(speed_str)
         self.size_label.setText(size_str)
@@ -148,30 +137,54 @@ class DownloadRow(QWidget):
 class YouTubeDownloaderApp(QMainWindow):
     download_row_requested = pyqtSignal(object, str, str, str, str, str, str, str, object)
     # args: thumb_pixmap, title, fmt, res_or_bitrate, time_started, url, folder, format_text, info
+    CONFIG_FILE = 'config.json'
 
     def __init__(self):
         super().__init__()
         self.setWindowTitle("YTV Downloader beta")
         self.setWindowIcon(QIcon("ytdownloadlogo.ico"))
         self.resize(700, 600)
-        self.download_folder = os.path.expanduser("~")
+        self.download_folder = self.load_download_folder()
         self.active_download_rows = []
         self.init_ui()
         self.set_dark_mode(True)  # Set dark mode by default
         self.download_row_requested.connect(self._add_download_row)
 
+    def load_download_folder(self):
+        import os
+        default_folder = os.path.join(os.path.expanduser('~'), 'Downloads')
+        try:
+            with open(self.CONFIG_FILE, 'r') as f:
+                config = json.load(f)
+                folder = config.get('download_folder', default_folder)
+                if os.path.isdir(folder):
+                    return folder
+        except Exception:
+            pass
+        return default_folder
+
+    def save_download_folder(self, folder):
+        try:
+            with open(self.CONFIG_FILE, 'w') as f:
+                json.dump({'download_folder': folder}, f)
+        except Exception as e:
+            print(f"Failed to save config: {e}")
+
     def init_ui(self):
         menubar = self.menuBar()
-        settings_menu = menubar.addMenu("Settings")
-        settings_action = QAction("Preferences", self)
-        settings_action.triggered.connect(self.placeholder_command)
-        settings_menu.addAction(settings_action)
+        if menubar is not None:
+            settings_menu = menubar.addMenu("Settings")
+            settings_action = QAction("Preferences", self)
+            settings_action.triggered.connect(self.placeholder_command)
+            if settings_menu is not None:
+                settings_menu.addAction(settings_action)
 
-        # Add Help menu
-        help_menu = menubar.addMenu("Help")
-        about_action = QAction("About", self)
-        about_action.triggered.connect(self.show_about_dialog)
-        help_menu.addAction(about_action)
+            # Add Help menu
+            help_menu = menubar.addMenu("Help")
+            about_action = QAction("About", self)
+            about_action.triggered.connect(self.show_about_dialog)
+            if help_menu is not None:
+                help_menu.addAction(about_action)
 
         central_widget = QWidget()
         self.setCentralWidget(central_widget)
@@ -196,7 +209,7 @@ class YouTubeDownloaderApp(QMainWindow):
         columns_layout.addWidget(left_panel, 1)
 
         self.url_entry = QLineEdit()
-        self.url_entry.setPlaceholderText(" Paste YouTube video URL here...")
+        self.url_entry.setPlaceholderText("Paste YouTube video URL here...")
         left_layout.addWidget(self.url_entry)
 
         self.format_options = [
@@ -309,7 +322,7 @@ class YouTubeDownloaderApp(QMainWindow):
 
     def download_video(self):
         url = self.url_entry.text().strip()
-        folder = self.folder_entry.text().strip()
+        folder = self.download_folder
         format_text = self.format_menu.currentText()
         if not url:
             self.status_label.setText("Please enter a YouTube URL.")
@@ -329,7 +342,7 @@ class YouTubeDownloaderApp(QMainWindow):
         try:
             with yt_dlp.YoutubeDL(ydl_opts) as ydl:
                 info = ydl.extract_info(url, download=False)
-            print("Video info fetched:", info.get('title', 'N/A'))
+            print("Video info fetched:", (info or {}).get('title', 'N/A'))
         except Exception as e:
             print("Exception in _prepare_download_row:", e)
             def update():
@@ -338,6 +351,7 @@ class YouTubeDownloaderApp(QMainWindow):
                 QMessageBox.critical(self, "Error", f"Failed to fetch video info.\n{e}")
             QTimer.singleShot(0, update)
             return
+        info = info or {}
         title = info.get('title', 'N/A')
         fmt = format_text
         res_or_bitrate = self._get_res_or_bitrate(info, format_text)
@@ -424,6 +438,7 @@ class YouTubeDownloaderApp(QMainWindow):
                 elif d['status'] == 'finished':
                     print("Download finished, merging...")
                     def update():
+                        row_widget.progress.setValue(100)
                         row_widget.status_label.setText("Merging")
                         row_widget.eta_label.setText("ETA: -")
                     QTimer.singleShot(0, update)
@@ -460,6 +475,7 @@ class YouTubeDownloaderApp(QMainWindow):
         if folder:
             self.download_folder = folder
             self.folder_entry.setText(folder)
+            self.save_download_folder(folder)
 
     def placeholder_command(self):
         QMessageBox.information(self, "Info", "This feature is not yet implemented.")
