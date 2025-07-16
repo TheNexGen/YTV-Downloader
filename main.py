@@ -13,7 +13,7 @@ from PyQt6.QtWidgets import (
     QProgressBar, QFrame, QGridLayout, QSizePolicy, QScrollArea, QToolButton
 )
 from PyQt6.QtGui import QIcon, QPixmap, QFont, QAction
-from PyQt6.QtCore import Qt, QTimer, pyqtSignal
+from PyQt6.QtCore import Qt, QTimer, pyqtSignal, QEvent
 import json
 
 class DownloadRow(QWidget):
@@ -78,40 +78,25 @@ class DownloadRow(QWidget):
         self.cancel_btn.setToolTip("Cancel")
         self.cancel_btn.setFixedSize(32, 32)
         self.cancel_btn.setEnabled(True)
-        layout.addWidget(self.cancel_btn, 1, 5)
-        
         self.retry_btn = QToolButton()
         self.retry_btn.setIcon(QIcon.fromTheme("view-refresh"))  # Use system icon
         self.retry_btn.setToolTip("Retry")
         self.retry_btn.setFixedSize(32, 32)
         self.retry_btn.setEnabled(False)
-        layout.addWidget(self.retry_btn, 1, 6)
-        
         self.open_btn = QToolButton()
         self.open_btn.setIcon(QIcon.fromTheme("folder-open"))  # Use system icon
         self.open_btn.setToolTip("Open Folder")
         self.open_btn.setFixedSize(32, 32)
         self.open_btn.setEnabled(False)
-        layout.addWidget(self.open_btn, 1, 7)
-        
-        # Style the icon buttons
-        for btn in [self.cancel_btn, self.retry_btn, self.open_btn]:
-            btn.setStyleSheet("""
-                QToolButton {
-                    border: none;
-                    border-radius: 16px;
-                    background: #FFD600;
-                    color: #333;
-                }
-                QToolButton:hover {
-                    background: #FFEA00;
-                }
-                QToolButton:disabled {
-                    background: #e0e0e0;
-                    color: #888;
-                }
-            """)
-            btn.setSizePolicy(QSizePolicy.Policy.Fixed, QSizePolicy.Policy.Fixed)
+        # Create a horizontal layout for the three buttons
+        button_layout = QHBoxLayout()
+        button_layout.setSpacing(4)
+        button_layout.setContentsMargins(0, 0, 0, 0)
+        button_layout.addWidget(self.cancel_btn)
+        button_layout.addWidget(self.retry_btn)
+        button_layout.addWidget(self.open_btn)
+        # Add the button layout to the main layout
+        layout.addLayout(button_layout, 1, 5, 1, 3)
         
         self.progress = QProgressBar()
         self.progress.setValue(0)
@@ -123,6 +108,9 @@ class DownloadRow(QWidget):
         layout.setColumnStretch(8, 1)  # Add stretch at the end to prevent squishing
         self.setLayout(layout)
         self.update_progress_signal.connect(self.update_progress)
+        self.cancel_btn.installEventFilter(self)
+        self.retry_btn.installEventFilter(self)
+        self.open_btn.installEventFilter(self)
 
     def update_progress(self, percent, percent_text, speed_str, size_str, eta_str):
         if speed_str.startswith("Speed: "):
@@ -133,6 +121,25 @@ class DownloadRow(QWidget):
         self.size_label.setText(size_str)
         self.status_label.setText("Downloading")
         self.eta_label.setText(eta_str)
+
+    def eventFilter(self, obj, event):
+        import os
+        icon_dir = os.path.join(os.path.dirname(os.path.abspath(__file__)), 'icons')
+        if event.type() == QEvent.Type.Enter:
+            if obj == self.cancel_btn:
+                self.cancel_btn.setIcon(QIcon(os.path.join(icon_dir, 'cancel_white.svg')))
+            elif obj == self.retry_btn:
+                self.retry_btn.setIcon(QIcon(os.path.join(icon_dir, 'retry_white.svg')))
+            elif obj == self.open_btn:
+                self.open_btn.setIcon(QIcon(os.path.join(icon_dir, 'folder_white.svg')))
+        elif event.type() == QEvent.Type.Leave:
+            if obj == self.cancel_btn:
+                self.cancel_btn.setIcon(QIcon(os.path.join(icon_dir, 'cancel_gray.svg')))
+            elif obj == self.retry_btn:
+                self.retry_btn.setIcon(QIcon(os.path.join(icon_dir, 'retry_gray.svg')))
+            elif obj == self.open_btn:
+                self.open_btn.setIcon(QIcon(os.path.join(icon_dir, 'folder_gray.svg')))
+        return super().eventFilter(obj, event)
 
 class YouTubeDownloaderApp(QMainWindow):
     download_row_requested = pyqtSignal(object, str, str, str, str, str, str, str, object)
