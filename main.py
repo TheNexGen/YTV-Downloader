@@ -490,6 +490,10 @@ class YouTubeDownloaderApp(QMainWindow):
     def show_about_dialog(self):
         QMessageBox.information(self, "About YTV Downloader", "YTV Downloader beta\nA modern YouTube video downloader built with PyQt6.")
 
+    def closeEvent(self, event):
+        self.save_download_folder(self.download_folder)
+        super().closeEvent(event)
+
 if __name__ == "__main__":
     app = QApplication(sys.argv)
     app.setFont(QFont("Segoe UI", 10))
