@@ -15,9 +15,11 @@ from PyQt6.QtWidgets import (
 from PyQt6.QtGui import QIcon, QPixmap, QFont, QAction
 from PyQt6.QtCore import Qt, QTimer, pyqtSignal, QEvent
 import json
+import subprocess
 
 class DownloadRow(QWidget):
     update_progress_signal = pyqtSignal(int, str, str, str, str)
+    retry_requested = pyqtSignal(object)  # Signal to request retry from main app
     # percent, percent_text, speed_str, size_str, eta_str
 
     def __init__(self, thumb_pixmap, title, fmt, res_or_bitrate, time_started, parent=None):
@@ -112,6 +114,11 @@ class DownloadRow(QWidget):
         self.cancel_btn.installEventFilter(self)
         self.retry_btn.installEventFilter(self)
         self.open_btn.installEventFilter(self)
+        self.cancel_event = threading.Event()
+        self.download_path = None  # Set by main app when known
+        self.cancel_btn.clicked.connect(self.cancel_download)
+        self.retry_btn.clicked.connect(self.retry_download)
+        self.open_btn.clicked.connect(self.open_folder)
 
     def update_progress(self, percent, percent_text, speed_str, size_str, eta_str):
         if speed_str.startswith("Speed: "):
@@ -141,6 +148,33 @@ class DownloadRow(QWidget):
             elif obj == self.open_btn:
                 self.open_btn.setIcon(QIcon(os.path.join(icon_dir, 'folder_gray.svg')))
         return super().eventFilter(obj, event)
+
+    def cancel_download(self):
+        self.status_label.setText("Canceled")
+        self.progress.setValue(0)
+        self.percent_label.setText("0%")
+        self.cancel_btn.setEnabled(False)
+        self.retry_btn.setEnabled(True)
+        self.cancel_event.set()
+    def retry_download(self):
+        self.status_label.setText("Retrying...")
+        self.progress.setValue(0)
+        self.percent_label.setText("0%")
+        self.retry_btn.setEnabled(False)
+        self.cancel_btn.setEnabled(True)
+        self.cancel_event.clear()
+        self.retry_requested.emit(self)
+    def open_folder(self):
+        if self.download_path and os.path.exists(self.download_path):
+            folder = os.path.dirname(self.download_path)
+            if sys.platform == 'win32':
+                os.startfile(folder)
+            elif sys.platform == 'darwin':
+                subprocess.Popen(['open', folder])
+            else:
+                subprocess.Popen(['xdg-open', folder])
+        else:
+            QMessageBox.information(self, "Info", "File not found yet.")
 
 class YouTubeDownloaderApp(QMainWindow):
     download_row_requested = pyqtSignal(object, str, str, str, str, str, str, str, object)
@@ -381,6 +415,11 @@ class YouTubeDownloaderApp(QMainWindow):
         row.setSizePolicy(QSizePolicy.Policy.Expanding, QSizePolicy.Policy.Fixed)
         self.active_download_rows.append(row)
         self.active_downloads_layout.addWidget(row)
+        row.retry_requested.connect(lambda r=row: self._retry_download_row(r, url, folder, format_text, info))
+        self._start_download_thread(url, folder, format_text, row, info)
+
+    def _retry_download_row(self, row, url, folder, format_text, info):
+        print("Retry requested for row")
         self._start_download_thread(url, folder, format_text, row, info)
 
     def _get_res_or_bitrate(self, info, format_text):
@@ -424,6 +463,8 @@ class YouTubeDownloaderApp(QMainWindow):
         try:
             print("_download_thread: starting yt_dlp download")
             def progress_hook(d):
+                if row_widget.cancel_event.is_set():
+                    raise Exception("Download canceled by user.")
                 print("Progress hook called:", d.get('status'), d.get('downloaded_bytes', 0), d.get('total_bytes', 0))
                 if d['status'] == 'downloading':
                     total = d.get('total_bytes') or d.get('total_bytes_estimate') or 1
@@ -465,11 +506,15 @@ class YouTubeDownloaderApp(QMainWindow):
                 row_widget.open_btn.setEnabled(True)
                 row_widget.cancel_btn.setEnabled(False)
                 row_widget.retry_btn.setEnabled(False)
+                row_widget.download_path = outtmpl # Set the download path
             QTimer.singleShot(0, update)
         except Exception as e:
             print("Exception in _download_thread:", e)
             def update():
-                row_widget.status_label.setText("Error")
+                if str(e) == "Download canceled by user.":
+                    row_widget.status_label.setText("Canceled")
+                else:
+                    row_widget.status_label.setText("Error")
                 row_widget.retry_btn.setEnabled(True)
                 row_widget.open_btn.setEnabled(False)
                 row_widget.cancel_btn.setEnabled(False)
