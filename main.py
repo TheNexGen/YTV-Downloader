@@ -74,17 +74,18 @@ class DownloadRow(QWidget):
         
         # Icon buttons (32px each)
         self.cancel_btn = QToolButton()
-        self.cancel_btn.setIcon(QIcon.fromTheme("process-stop"))  # Use system icon
+        icon_dir = os.path.join(os.path.dirname(os.path.abspath(__file__)), 'icons')
+        self.cancel_btn.setIcon(QIcon(os.path.join(icon_dir, 'cancel_gray.svg')))
         self.cancel_btn.setToolTip("Cancel")
         self.cancel_btn.setFixedSize(32, 32)
         self.cancel_btn.setEnabled(True)
         self.retry_btn = QToolButton()
-        self.retry_btn.setIcon(QIcon.fromTheme("view-refresh"))  # Use system icon
+        self.retry_btn.setIcon(QIcon(os.path.join(icon_dir, 'retry_gray.svg')))
         self.retry_btn.setToolTip("Retry")
         self.retry_btn.setFixedSize(32, 32)
         self.retry_btn.setEnabled(False)
         self.open_btn = QToolButton()
-        self.open_btn.setIcon(QIcon.fromTheme("folder-open"))  # Use system icon
+        self.open_btn.setIcon(QIcon(os.path.join(icon_dir, 'folder_gray.svg')))
         self.open_btn.setToolTip("Open Folder")
         self.open_btn.setFixedSize(32, 32)
         self.open_btn.setEnabled(False)
@@ -338,7 +339,6 @@ class YouTubeDownloaderApp(QMainWindow):
             self.status_label.setText("Please select a valid download folder.")
             return
         self.status_label.setText("")
-        self.download_btn.setEnabled(False)
         self.url_entry.clear()
         threading.Thread(target=self._prepare_download_row, args=(url, folder, format_text), daemon=True).start()
 
@@ -465,7 +465,6 @@ class YouTubeDownloaderApp(QMainWindow):
                 row_widget.open_btn.setEnabled(True)
                 row_widget.cancel_btn.setEnabled(False)
                 row_widget.retry_btn.setEnabled(False)
-                self.download_btn.setEnabled(True)
             QTimer.singleShot(0, update)
         except Exception as e:
             print("Exception in _download_thread:", e)
@@ -474,7 +473,6 @@ class YouTubeDownloaderApp(QMainWindow):
                 row_widget.retry_btn.setEnabled(True)
                 row_widget.open_btn.setEnabled(False)
                 row_widget.cancel_btn.setEnabled(False)
-                self.download_btn.setEnabled(True)
             QTimer.singleShot(0, update)
 
     def browse_folder(self):
