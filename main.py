@@ -231,6 +231,8 @@ class YouTubeDownloaderApp(QMainWindow):
         central_widget = QWidget()
         self.setCentralWidget(central_widget)
         main_layout = QVBoxLayout(central_widget)
+        main_layout.setContentsMargins(0, 0, 0, 0)
+        main_layout.setSpacing(0)
 
         top_layout = QHBoxLayout()
         self.title_label = QLabel("YTV Downloader")
@@ -244,11 +246,11 @@ class YouTubeDownloaderApp(QMainWindow):
         main_layout.addLayout(top_layout)
 
         columns_layout = QHBoxLayout()
-        main_layout.addLayout(columns_layout, 1)
+        main_layout.addLayout(columns_layout)
 
         left_panel = QWidget()
         left_layout = QVBoxLayout(left_panel)
-        columns_layout.addWidget(left_panel, 1)
+        columns_layout.addWidget(left_panel)
 
         self.url_entry = QLineEdit()
         self.url_entry.setPlaceholderText("Paste YouTube video URL here...")
@@ -285,7 +287,7 @@ class YouTubeDownloaderApp(QMainWindow):
 
         right_panel = QWidget()
         right_layout = QVBoxLayout(right_panel)
-        columns_layout.addWidget(right_panel, 1)
+        columns_layout.addWidget(right_panel)
 
         folder_label = QLabel("Download Folder:")
         right_layout.addWidget(folder_label)
@@ -305,13 +307,20 @@ class YouTubeDownloaderApp(QMainWindow):
         # Add QScrollArea for download rows below the columns_layout, spanning full width
         self.active_downloads_scroll = QScrollArea()
         self.active_downloads_scroll.setWidgetResizable(True)
-        self.active_downloads_scroll.setFixedHeight(150)
+        # self.active_downloads_scroll.setFixedHeight(150)  # Removed to allow cards to start at the top and fill downwards
         self.active_downloads_widget = QWidget()
         self.active_downloads_layout = QVBoxLayout(self.active_downloads_widget)
-        self.active_downloads_layout.setContentsMargins(4, 4, 4, 4)
-        self.active_downloads_layout.setSpacing(6)
+        self.active_downloads_layout.setContentsMargins(0, 0, 0, 0)
+        self.active_downloads_layout.setSpacing(2)
+        self.active_downloads_layout.setAlignment(Qt.AlignmentFlag.AlignTop)
         self.active_downloads_scroll.setWidget(self.active_downloads_widget)
+        self.active_downloads_widget.setSizePolicy(QSizePolicy.Policy.Preferred, QSizePolicy.Policy.Preferred)
+        self.active_downloads_scroll.setAlignment(Qt.AlignmentFlag.AlignTop)
+
+        # Add a stretch before the scroll area to push it to the top
         main_layout.addWidget(self.active_downloads_scroll)
+
+        # self.active_downloads_layout.addStretch()  # Removed to make download cards start from the top
 
     def set_button_style(self, button):
         button.setStyleSheet("""
@@ -415,11 +424,7 @@ class YouTubeDownloaderApp(QMainWindow):
         row.setSizePolicy(QSizePolicy.Policy.Expanding, QSizePolicy.Policy.Fixed)
         self.active_download_rows.append(row)
         self.active_downloads_layout.addWidget(row)
-        row.retry_requested.connect(lambda r=row: self._retry_download_row(r, url, folder, format_text, info))
-        self._start_download_thread(url, folder, format_text, row, info)
-
-    def _retry_download_row(self, row, url, folder, format_text, info):
-        print("Retry requested for row")
+        self.active_downloads_widget.adjustSize()
         self._start_download_thread(url, folder, format_text, row, info)
 
     def _get_res_or_bitrate(self, info, format_text):
