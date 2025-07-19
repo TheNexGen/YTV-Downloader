@@ -279,11 +279,7 @@ class YouTubeDownloaderApp(QMainWindow):
         self.set_button_style(self.download_btn)
         left_layout.addWidget(self.download_btn)
 
-        left_layout.addSpacing(10)
-        # Remove QScrollArea from left panel
-        # left_layout.addWidget(self.active_downloads_scroll)
-
-        left_layout.addStretch()
+        left_layout.addSpacing(5)
 
         right_panel = QWidget()
         right_layout = QVBoxLayout(right_panel)
@@ -302,12 +298,10 @@ class YouTubeDownloaderApp(QMainWindow):
 
         self.status_label = QLabel()
         right_layout.addWidget(self.status_label)
-        right_layout.addStretch()
 
         # Add QScrollArea for download rows below the columns_layout, spanning full width
         self.active_downloads_scroll = QScrollArea()
         self.active_downloads_scroll.setWidgetResizable(True)
-        # self.active_downloads_scroll.setFixedHeight(150)  # Removed to allow cards to start at the top and fill downwards
         self.active_downloads_widget = QWidget()
         self.active_downloads_layout = QVBoxLayout(self.active_downloads_widget)
         self.active_downloads_layout.setContentsMargins(0, 0, 0, 0)
@@ -317,7 +311,7 @@ class YouTubeDownloaderApp(QMainWindow):
         self.active_downloads_widget.setSizePolicy(QSizePolicy.Policy.Preferred, QSizePolicy.Policy.Preferred)
         self.active_downloads_scroll.setAlignment(Qt.AlignmentFlag.AlignTop)
 
-        # Add a stretch before the scroll area to push it to the top
+        # Add the scroll area directly after the columns layout
         main_layout.addWidget(self.active_downloads_scroll)
 
         # self.active_downloads_layout.addStretch()  # Removed to make download cards start from the top
