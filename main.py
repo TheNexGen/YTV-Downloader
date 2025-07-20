@@ -150,12 +150,11 @@ class DownloadRow(QWidget):
         return super().eventFilter(obj, event)
 
     def cancel_download(self):
-        self.status_label.setText("Canceled")
-        self.progress.setValue(0)
-        self.percent_label.setText("0%")
+        print("Cancel button clicked")
+        self.cancel_event.set()
+        self.status_label.setText("Canceling...")
         self.cancel_btn.setEnabled(False)
         self.retry_btn.setEnabled(True)
-        self.cancel_event.set()
     def retry_download(self):
         self.status_label.setText("Retrying...")
         self.progress.setValue(0)
@@ -416,6 +415,7 @@ class YouTubeDownloaderApp(QMainWindow):
         print("_add_download_row called: creating DownloadRow and starting download thread")
         row = DownloadRow(thumb_pixmap, title, fmt, res_or_bitrate, time_started)
         row.setSizePolicy(QSizePolicy.Policy.Expanding, QSizePolicy.Policy.Fixed)
+        row.retry_requested.connect(lambda row_widget: self._retry_download(row_widget, url, folder, format_text, info))
         self.active_download_rows.append(row)
         self.active_downloads_layout.addWidget(row)
         self.active_downloads_widget.adjustSize()
@@ -431,6 +431,10 @@ class YouTubeDownloaderApp(QMainWindow):
                 return f"{resolution}"
             return "-"
         return "-"
+
+    def _retry_download(self, row_widget, url, folder, format_text, info):
+        print("_retry_download called")
+        self._start_download_thread(url, folder, format_text, row_widget, info)
 
     def _start_download_thread(self, url, folder, format_text, row_widget, info):
         print("_start_download_thread called")
@@ -459,10 +463,15 @@ class YouTubeDownloaderApp(QMainWindow):
         outtmpl = os.path.join(folder, "%(title)s.%(ext)s")
         ffmpeg_path = os.path.join(os.path.dirname(os.path.abspath(__file__)), 'Tools', 'ffmpeg.exe')
         print("FFmpeg path used:", ffmpeg_path)  # Debug print
+        
+        # Store the ydl instance for potential cancellation
+        ydl_instance = None
+        
         try:
             print("_download_thread: starting yt_dlp download")
             def progress_hook(d):
                 if row_widget.cancel_event.is_set():
+                    print("Cancel event detected in progress hook")
                     raise Exception("Download canceled by user.")
                 print("Progress hook called:", d.get('status'), d.get('downloaded_bytes', 0), d.get('total_bytes', 0))
                 if d['status'] == 'downloading':
@@ -489,6 +498,7 @@ class YouTubeDownloaderApp(QMainWindow):
                         row_widget.status_label.setText("Merging")
                         row_widget.eta_label.setText("ETA: -")
                     QTimer.singleShot(0, update)
+            
             ydl_opts = {
                 'format': ydl_format,
                 'outtmpl': outtmpl,
@@ -498,20 +508,43 @@ class YouTubeDownloaderApp(QMainWindow):
                 'merge_output_format': None,
                 'ffmpeg_location': ffmpeg_path,
             }
-            with yt_dlp.YoutubeDL(ydl_opts) as ydl:
-                ydl.download([url])
+            
+            ydl_instance = yt_dlp.YoutubeDL(ydl_opts)
+            ydl_instance.download([url])
+            
             def update():
                 row_widget.status_label.setText("Complete")
                 row_widget.open_btn.setEnabled(True)
                 row_widget.cancel_btn.setEnabled(False)
                 row_widget.retry_btn.setEnabled(False)
-                row_widget.download_path = outtmpl # Set the download path
+                # Find the actual downloaded file path
+                try:
+                    # Get the actual filename from the info
+                    filename = ydl_instance.prepare_filename(info)
+                    if os.path.exists(filename):
+                        row_widget.download_path = filename
+                    else:
+                        # Try to find the file in the download folder
+                        for file in os.listdir(folder):
+                            if file.endswith(('.mp4', '.m4a', '.mp3', '.webm', '.aac', '.flac', '.opus', '.ogg', '.wav')):
+                                file_path = os.path.join(folder, file)
+                                if os.path.isfile(file_path):
+                                    row_widget.download_path = file_path
+                                    break
+                except Exception as e:
+                    print(f"Error setting download path: {e}")
             QTimer.singleShot(0, update)
+            
         except Exception as e:
             print("Exception in _download_thread:", e)
             def update():
                 if str(e) == "Download canceled by user.":
                     row_widget.status_label.setText("Canceled")
+                    row_widget.progress.setValue(0)
+                    row_widget.percent_label.setText("0%")
+                    row_widget.speed_label.setText("0 KB/s")
+                    row_widget.size_label.setText("0 MB / 0 MB")
+                    row_widget.eta_label.setText("ETA: -")
                 else:
                     row_widget.status_label.setText("Error")
                 row_widget.retry_btn.setEnabled(True)
