@@ -14,7 +14,7 @@ A modern YouTube video downloader for Windows, built with Python, [PyQt6](https:
 ## Download
 
 ### Latest Release
-Download the latest release from the [Releases](https://github.com/yourusername/Video-Downloader/releases) page.
+Download the latest release from the [Releases](https://github.com/TheNexGen/Video-Downloader/releases) page.
 
 ### System Requirements
 - Windows 10 or later
@@ -23,7 +23,7 @@ Download the latest release from the [Releases](https://github.com/yourusername/
 ## Installation
 
 ### Option 1: Download Executable (Recommended)
-1. Go to the [Releases](https://github.com/yourusername/Video-Downloader/releases) page
+1. Go to the [Releases](https://github.com/TheNexGen/Video-Downloader/releases) page
 2. Download the latest `YTV-Downloader.exe`
 3. Run the executable - no installation required!
 
