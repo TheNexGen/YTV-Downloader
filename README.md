@@ -22,34 +22,11 @@ Download the latest release from the [Releases](https://github.com/TheNexGen/Vid
 
 ## Installation
 
-### Option 1: Download Executable (Recommended)
+### Download Executable
 1. Go to the [Releases](https://github.com/TheNexGen/Video-Downloader/releases) page
 2. Download the latest `YTV-Downloader.exe`
 3. Run the executable - no installation required!
 
-### Option 2: Build from Source
-1. **Clone the repository:**
-   ```sh
-   git clone https://github.com/yourusername/Video-Downloader.git
-   cd Video-Downloader
-   ```
-
-2. **Create and activate a virtual environment:**
-   ```sh
-   python -m venv venv
-   venv\Scripts\activate  # On Windows
-   # source venv/bin/activate  # On macOS/Linux
-   ```
-
-3. **Install dependencies:**
-   ```sh
-   pip install -r requirements.txt
-   ```
-
-4. **Run the application:**
-   ```sh
-   python main.py
-   ```
 
 ## Usage
 1. Launch the application
@@ -60,27 +37,6 @@ Download the latest release from the [Releases](https://github.com/TheNexGen/Vid
 6. Monitor progress in the download cards at the bottom
 7. Use the dark mode toggle for your preferred theme
 
-## Building Executable
-
-### Automated Build
-Run the build script:
-```sh
-python build.py
-```
-The executable will be created in the `release` directory.
-
-### Manual Build
-1. Install PyInstaller:
-   ```sh
-   pip install pyinstaller
-   ```
-
-2. Build using the spec file:
-   ```sh
-   pyinstaller main.spec
-   ```
-
-## Development
 
 ### Project Structure
 ```
