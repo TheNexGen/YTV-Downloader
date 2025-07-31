@@ -95,24 +95,4 @@ Video-Downloader/
 └── .github/workflows/  # GitHub Actions
 ```
 
-### Adding New Features
-1. Make your changes to `main.py`
-2. Test thoroughly
-3. Update version in `build.py` if needed
-4. Create a new release tag:
-   ```sh
-   git tag v1.0.1
-   git push origin v1.0.1
-   ```
 
-## Notes
-- For best results, always use the latest version of `yt-dlp`
-- This app is for personal use. Please respect YouTube's Terms of Service
-- FFmpeg is bundled with the application for video processing
-- The application saves your download folder preference in `config.json`
-
-## License
-[Add your license here]
-
-## Contributing
-[Add contribution guidelines here] 
