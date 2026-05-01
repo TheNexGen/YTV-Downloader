@@ -346,6 +346,7 @@ class YouTubeDownloaderApp(QMainWindow):
 
         # Add QScrollArea for download rows below the columns_layout, spanning full width
         self.active_downloads_scroll = QScrollArea()
+        self.active_downloads_scroll.setFrameShape(QFrame.Shape.NoFrame)
         self.active_downloads_scroll.setWidgetResizable(True)
         self.active_downloads_widget = QWidget()
         self.active_downloads_layout = QVBoxLayout(self.active_downloads_widget)
