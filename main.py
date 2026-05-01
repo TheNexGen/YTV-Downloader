@@ -65,7 +65,9 @@ class DownloadRow(QWidget):
         # Title and Resolution
         title_row = QHBoxLayout()
         self.title_label = QLabel(title)
-        self.title_label.setStyleSheet("font-weight: bold; font-size: 14px; color: #ffffff;")
+        self.title_label.setWordWrap(True)
+        self.title_label.setStyleSheet("font-weight: bold; font-size: 13px; color: #ffffff;")
+        self.title_label.setMaximumHeight(40) # Limit to about 2 lines
         title_row.addWidget(self.title_label)
         
         self.res_label = QLabel(f"[{res_or_bitrate}]")
