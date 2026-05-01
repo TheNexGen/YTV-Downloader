@@ -25,7 +25,12 @@ class DownloadRow(QWidget):
 
     def __init__(self, thumb_pixmap, title, fmt, res_or_bitrate, time_started, parent=None):
         super().__init__(parent)
-        self.setFixedHeight(100)
+        self.main_app = parent
+        self.setFixedHeight(110)
+        
+        # Internal status tracking
+        self.current_status = "Queued"
+        self.current_color = "#FFD600"
         
         # Main layout for the widget
         main_layout = QVBoxLayout(self)
@@ -60,12 +65,14 @@ class DownloadRow(QWidget):
         
         # Info & Progress (Section 2 - Middle)
         info_layout = QVBoxLayout()
-        info_layout.setSpacing(8)
+        info_layout.setSpacing(5)
         
         # Title and Resolution
         title_row = QHBoxLayout()
         self.title_label = QLabel(title)
-        self.title_label.setStyleSheet("font-weight: bold; font-size: 14px; color: #ffffff;")
+        self.title_label.setWordWrap(True)
+        self.title_label.setStyleSheet("font-weight: bold; font-size: 13px; color: #ffffff;")
+        self.title_label.setMaximumHeight(45) # Increased to fit 2 lines comfortably
         title_row.addWidget(self.title_label)
         
         self.res_label = QLabel(f"[{res_or_bitrate}]")
@@ -136,20 +143,17 @@ class DownloadRow(QWidget):
         self.open_btn.setToolTip("Open Folder")
         self.open_btn.setFixedSize(32, 32)
         self.open_btn.setEnabled(False)
-        self.open_btn.setStyleSheet("QToolButton { border: none; background: transparent; } QToolButton:hover { background: #444; border-radius: 4px; }")
         
         self.retry_btn = QToolButton()
         self.retry_btn.setIcon(QIcon(os.path.join(icon_dir, 'retry_gray.svg')))
         self.retry_btn.setToolTip("Retry")
         self.retry_btn.setFixedSize(32, 32)
         self.retry_btn.setEnabled(False)
-        self.retry_btn.setStyleSheet("QToolButton { border: none; background: transparent; } QToolButton:hover { background: #444; border-radius: 4px; }")
 
         self.cancel_btn = QToolButton()
         self.cancel_btn.setIcon(QIcon(os.path.join(icon_dir, 'cancel_gray.svg')))
         self.cancel_btn.setToolTip("Cancel")
         self.cancel_btn.setFixedSize(32, 32)
-        self.cancel_btn.setStyleSheet("QToolButton { border: none; background: transparent; } QToolButton:hover { background: #444; border-radius: 4px; }")
         
         buttons_layout.addWidget(self.open_btn)
         buttons_layout.addWidget(self.retry_btn)
@@ -158,6 +162,9 @@ class DownloadRow(QWidget):
         
         main_layout.addWidget(self.card)
         self.setLayout(main_layout)
+
+        # Apply initial theme
+        self.apply_theme(self.main_app.theme_switch.isChecked())
 
         # Signals and Events
         self.update_progress_signal.connect(self.update_progress)
@@ -172,9 +179,63 @@ class DownloadRow(QWidget):
         self.cancel_btn.installEventFilter(self)
         self.retry_btn.installEventFilter(self)
         self.open_btn.installEventFilter(self)
+
+    def apply_theme(self, is_dark):
+        if is_dark:
+            card_bg = "#2b2e33"
+            card_hover = "#32363b"
+            card_border = "#3e4247"
+            text_color = "#ffffff"
+            subtext_color = "#aaa"
+            progress_bg = "#1e2023"
+            btn_hover = "#444"
+        else:
+            card_bg = "#ffffff"
+            card_hover = "#f9f9f9"
+            card_border = "#dddddd"
+            text_color = "#333333"
+            subtext_color = "#666"
+            progress_bg = "#eeeeee"
+            btn_hover = "#eee"
+
+        self.card.setStyleSheet(f"""
+            #DownloadCard {{
+                background-color: {card_bg};
+                border-radius: 12px;
+                border: 1px solid {card_border};
+            }}
+            #DownloadCard:hover {{
+                background-color: {card_hover};
+            }}
+        """)
         
-        # Internal status tracking
-        self.current_status = "Queued"
+        self.title_label.setStyleSheet(f"font-weight: bold; font-size: 13px; color: {text_color}; background: transparent;")
+        self.res_label.setStyleSheet(f"color: {subtext_color}; font-size: 11px; background: transparent;")
+        self.speed_label.setStyleSheet(f"color: {subtext_color}; font-size: 11px; background: transparent;")
+        self.size_label.setStyleSheet(f"color: {subtext_color}; font-size: 11px; background: transparent;")
+        self.eta_label.setStyleSheet(f"color: {subtext_color}; font-size: 11px; background: transparent;")
+        self.time_label.setStyleSheet(f"color: {subtext_color}; font-size: 10px; background: transparent;")
+        self.percent_label.setStyleSheet(f"font-weight: bold; color: #FFD600; background: transparent;")
+        
+        self.progress.setStyleSheet(f"""
+            QProgressBar {{
+                background-color: {progress_bg};
+                border-radius: 3px;
+                border: none;
+            }}
+            QProgressBar::chunk {{
+                background-color: #FFD600;
+                border-radius: 3px;
+            }}
+        """)
+        
+        btn_style = f"QToolButton {{ border: none; background: transparent; }} QToolButton:hover {{ background: {btn_hover}; border-radius: 4px; }}"
+        self.open_btn.setStyleSheet(btn_style)
+        self.retry_btn.setStyleSheet(btn_style)
+        self.cancel_btn.setStyleSheet(btn_style)
+        
+        # Re-apply status color which is dynamic
+        self.update_status(self.current_status, self.current_color)
 
     def update_progress(self, percent, percent_text, speed_str, size_str, eta_str):
         if speed_str.startswith("Speed: "):
@@ -192,8 +253,9 @@ class DownloadRow(QWidget):
     def update_status(self, status, color="#FFD600"):
         print(f"Status Change: {self.current_status} -> {status}")
         self.current_status = status
+        self.current_color = color
         self.status_label.setText(status)
-        self.status_label.setStyleSheet(f"color: {color}; font-size: 12px; font-weight: bold;")
+        self.status_label.setStyleSheet(f"color: {color}; font-size: 12px; font-weight: bold; background: transparent;")
         
         # Adjust other labels based on status
         if status in ["Complete", "Canceled", "Error"]:
@@ -248,7 +310,7 @@ class DownloadRow(QWidget):
 class SettingsDialog(QDialog):
     def __init__(self, parent):
         super().__init__(parent)
-        self.parent = parent
+        self.main_app = parent
         self.setWindowTitle("Settings")
         self.setFixedSize(400, 200)
         
@@ -259,12 +321,12 @@ class SettingsDialog(QDialog):
         layout.addWidget(folder_label)
         
         folder_layout = QHBoxLayout()
-        self.folder_entry = QLineEdit(self.parent.download_folder)
+        self.folder_entry = QLineEdit(self.main_app.download_folder)
         folder_layout.addWidget(self.folder_entry)
         
         self.browse_btn = QPushButton("Browse")
         self.browse_btn.clicked.connect(self.browse_folder)
-        self.parent.set_button_style(self.browse_btn)
+        self.main_app.set_button_style(self.browse_btn)
         folder_layout.addWidget(self.browse_btn)
         layout.addLayout(folder_layout)
         
@@ -272,7 +334,7 @@ class SettingsDialog(QDialog):
         
         # Theme Section
         self.theme_switch = QCheckBox("Dark Mode")
-        self.theme_switch.setChecked(self.parent.theme_switch.isChecked())
+        self.theme_switch.setChecked(self.main_app.theme_switch.isChecked())
         self.theme_switch.stateChanged.connect(self.toggle_mode)
         layout.addWidget(self.theme_switch)
         
@@ -281,18 +343,18 @@ class SettingsDialog(QDialog):
         # Close Button
         self.close_btn = QPushButton("Done")
         self.close_btn.clicked.connect(self.accept)
-        self.parent.set_button_style(self.close_btn)
+        self.main_app.set_button_style(self.close_btn)
         layout.addWidget(self.close_btn, alignment=Qt.AlignmentFlag.AlignCenter)
 
     def browse_folder(self):
-        folder = QFileDialog.getExistingDirectory(self, "Select Download Folder", self.parent.download_folder)
+        folder = QFileDialog.getExistingDirectory(self, "Select Download Folder", self.main_app.download_folder)
         if folder:
-            self.parent.download_folder = folder
+            self.main_app.download_folder = folder
             self.folder_entry.setText(folder)
-            self.parent.save_download_folder(folder)
+            self.main_app.save_download_folder(folder)
 
     def toggle_mode(self):
-        self.parent.theme_switch.setChecked(self.theme_switch.isChecked())
+        self.main_app.theme_switch.setChecked(self.theme_switch.isChecked())
         # The parent's toggle_mode will handle the rest via the signal connection
 
 class YouTubeDownloaderApp(QMainWindow):
@@ -476,6 +538,10 @@ class YouTubeDownloaderApp(QMainWindow):
                 QPushButton:disabled { background: #e0e0e0; color: #888888; border-radius: 8px; }
                 QLineEdit, QComboBox { background: #fff; border: 1px solid #ccc; border-radius: 8px; }
             """)
+        
+        # Update existing download rows
+        for row in self.active_download_rows:
+            row.apply_theme(enabled)
 
     def toggle_mode(self):
         self.set_dark_mode(self.theme_switch.isChecked())
@@ -529,7 +595,7 @@ class YouTubeDownloaderApp(QMainWindow):
 
     def _add_download_row(self, thumb_pixmap, title, fmt, res_or_bitrate, time_started, url, folder, format_text, info):
         print("_add_download_row called: creating DownloadRow and starting download thread")
-        row = DownloadRow(thumb_pixmap, title, fmt, res_or_bitrate, time_started)
+        row = DownloadRow(thumb_pixmap, title, fmt, res_or_bitrate, time_started, parent=self)
         row.setSizePolicy(QSizePolicy.Policy.Expanding, QSizePolicy.Policy.Fixed)
         row.retry_requested.connect(lambda row_widget: self._retry_download(row_widget, url, folder, format_text, info))
         self.active_download_rows.append(row)
