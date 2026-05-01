@@ -10,7 +10,8 @@ import datetime
 from PyQt6.QtWidgets import (
     QApplication, QMainWindow, QWidget, QLabel, QLineEdit, QPushButton, QComboBox,
     QFileDialog, QHBoxLayout, QVBoxLayout, QMenuBar, QMessageBox, QCheckBox,
-    QProgressBar, QFrame, QGridLayout, QSizePolicy, QScrollArea, QToolButton
+    QProgressBar, QFrame, QGridLayout, QSizePolicy, QScrollArea, QToolButton,
+    QDialog
 )
 from PyQt6.QtGui import QIcon, QPixmap, QFont, QAction
 from PyQt6.QtCore import Qt, QTimer, pyqtSignal, QEvent
@@ -175,6 +176,56 @@ class DownloadRow(QWidget):
         else:
             QMessageBox.information(self, "Info", "File not found yet.")
 
+class SettingsDialog(QDialog):
+    def __init__(self, parent):
+        super().__init__(parent)
+        self.parent = parent
+        self.setWindowTitle("Settings")
+        self.setFixedSize(400, 200)
+        
+        layout = QVBoxLayout(self)
+        
+        # Download Folder Section
+        folder_label = QLabel("Download Folder:")
+        layout.addWidget(folder_label)
+        
+        folder_layout = QHBoxLayout()
+        self.folder_entry = QLineEdit(self.parent.download_folder)
+        folder_layout.addWidget(self.folder_entry)
+        
+        self.browse_btn = QPushButton("Browse")
+        self.browse_btn.clicked.connect(self.browse_folder)
+        self.parent.set_button_style(self.browse_btn)
+        folder_layout.addWidget(self.browse_btn)
+        layout.addLayout(folder_layout)
+        
+        layout.addSpacing(10)
+        
+        # Theme Section
+        self.theme_switch = QCheckBox("Dark Mode")
+        self.theme_switch.setChecked(self.parent.theme_switch.isChecked())
+        self.theme_switch.stateChanged.connect(self.toggle_mode)
+        layout.addWidget(self.theme_switch)
+        
+        layout.addStretch()
+        
+        # Close Button
+        self.close_btn = QPushButton("Done")
+        self.close_btn.clicked.connect(self.accept)
+        self.parent.set_button_style(self.close_btn)
+        layout.addWidget(self.close_btn, alignment=Qt.AlignmentFlag.AlignCenter)
+
+    def browse_folder(self):
+        folder = QFileDialog.getExistingDirectory(self, "Select Download Folder", self.parent.download_folder)
+        if folder:
+            self.parent.download_folder = folder
+            self.folder_entry.setText(folder)
+            self.parent.save_download_folder(folder)
+
+    def toggle_mode(self):
+        self.parent.theme_switch.setChecked(self.theme_switch.isChecked())
+        # The parent's toggle_mode will handle the rest via the signal connection
+
 class YouTubeDownloaderApp(QMainWindow):
     download_row_requested = pyqtSignal(object, str, str, str, str, str, str, str, object)
     # args: thumb_pixmap, title, fmt, res_or_bitrate, time_started, url, folder, format_text, info
@@ -214,11 +265,8 @@ class YouTubeDownloaderApp(QMainWindow):
     def init_ui(self):
         menubar = self.menuBar()
         if menubar is not None:
-            settings_menu = menubar.addMenu("Settings")
-            settings_action = QAction("Preferences", self)
-            settings_action.triggered.connect(self.placeholder_command)
-            if settings_menu is not None:
-                settings_menu.addAction(settings_action)
+            settings_action = menubar.addAction("Settings")
+            settings_action.triggered.connect(self.show_settings_dialog)
 
             # Add Help menu
             help_menu = menubar.addMenu("Help")
@@ -238,10 +286,13 @@ class YouTubeDownloaderApp(QMainWindow):
         self.title_label.setStyleSheet("font-size: 22px; font-weight: bold;")
         top_layout.addWidget(self.title_label)
         top_layout.addStretch()
+        
+        # Hidden checkbox to keep the logic working for now
         self.theme_switch = QCheckBox("Dark Mode")
         self.theme_switch.setChecked(True)
         self.theme_switch.stateChanged.connect(self.toggle_mode)
-        top_layout.addWidget(self.theme_switch)
+        self.theme_switch.hide() 
+        
         main_layout.addLayout(top_layout)
 
         columns_layout = QHBoxLayout()
@@ -283,17 +334,6 @@ class YouTubeDownloaderApp(QMainWindow):
         right_panel = QWidget()
         right_layout = QVBoxLayout(right_panel)
         columns_layout.addWidget(right_panel)
-
-        folder_label = QLabel("Download Folder:")
-        right_layout.addWidget(folder_label)
-        folder_layout = QHBoxLayout()
-        self.folder_entry = QLineEdit(self.download_folder)
-        folder_layout.addWidget(self.folder_entry)
-        self.browse_btn = QPushButton("Browse")
-        self.browse_btn.clicked.connect(self.browse_folder)
-        self.set_button_style(self.browse_btn)
-        folder_layout.addWidget(self.browse_btn)
-        right_layout.addLayout(folder_layout)
 
         self.status_label = QLabel()
         right_layout.addWidget(self.status_label)
@@ -552,18 +592,12 @@ class YouTubeDownloaderApp(QMainWindow):
                 row_widget.cancel_btn.setEnabled(False)
             QTimer.singleShot(0, update)
 
-    def browse_folder(self):
-        folder = QFileDialog.getExistingDirectory(self, "Select Download Folder", self.download_folder)
-        if folder:
-            self.download_folder = folder
-            self.folder_entry.setText(folder)
-            self.save_download_folder(folder)
-
-    def placeholder_command(self):
-        QMessageBox.information(self, "Info", "This feature is not yet implemented.")
-
     def show_about_dialog(self):
         QMessageBox.information(self, "About YTV Downloader", "YTV Downloader beta\nA modern YouTube video downloader built with PyQt6.")
+
+    def show_settings_dialog(self):
+        dialog = SettingsDialog(self)
+        dialog.exec()
 
     def closeEvent(self, event):
         self.save_download_folder(self.download_folder)
