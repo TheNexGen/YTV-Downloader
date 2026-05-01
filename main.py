@@ -20,106 +20,156 @@ import subprocess
 
 class DownloadRow(QWidget):
     update_progress_signal = pyqtSignal(int, str, str, str, str)
-    retry_requested = pyqtSignal(object)  # Signal to request retry from main app
-    # percent, percent_text, speed_str, size_str, eta_str
+    retry_requested = pyqtSignal(object)
 
     def __init__(self, thumb_pixmap, title, fmt, res_or_bitrate, time_started, parent=None):
         super().__init__(parent)
-        self.setMinimumHeight(60)
-        self.setStyleSheet("QWidget { background: transparent; }")
-        layout = QGridLayout(self)
-        layout.setContentsMargins(2, 2, 2, 2)
-        layout.setSpacing(4)
+        self.setFixedHeight(100)
         
-        # Thumbnail (64px)
+        # Main layout for the widget
+        main_layout = QVBoxLayout(self)
+        main_layout.setContentsMargins(10, 5, 10, 5)
+        
+        # The Card Container
+        self.card = QFrame()
+        self.card.setObjectName("DownloadCard")
+        self.card.setStyleSheet("""
+            #DownloadCard {
+                background-color: #2b2e33;
+                border-radius: 12px;
+                border: 1px solid #3e4247;
+            }
+            #DownloadCard:hover {
+                background-color: #32363b;
+                border: 1px solid #50555c;
+            }
+        """)
+        card_layout = QHBoxLayout(self.card)
+        card_layout.setContentsMargins(12, 12, 12, 12)
+        card_layout.setSpacing(15)
+        
+        # Thumbnail (Section 1)
+        self.thumb_label = QLabel()
         if thumb_pixmap:
-            self.thumb_label = QLabel()
-            self.thumb_label.setPixmap(thumb_pixmap.scaled(64, 36, Qt.AspectRatioMode.KeepAspectRatio, Qt.TransformationMode.SmoothTransformation))
-            layout.addWidget(self.thumb_label, 0, 0, 2, 1)
+            self.thumb_label.setPixmap(thumb_pixmap.scaled(110, 62, Qt.AspectRatioMode.KeepAspectRatio, Qt.TransformationMode.SmoothTransformation))
         else:
-            self.thumb_label = QLabel()
-            self.thumb_label.setFixedSize(64, 36)
-            layout.addWidget(self.thumb_label, 0, 0, 2, 1)
+            self.thumb_label.setFixedSize(110, 62)
+            self.thumb_label.setStyleSheet("background-color: #1e2023; border-radius: 6px;")
+        card_layout.addWidget(self.thumb_label)
         
-        # Top row
+        # Info & Progress (Section 2 - Middle)
+        info_layout = QVBoxLayout()
+        info_layout.setSpacing(8)
+        
+        # Title and Resolution
+        title_row = QHBoxLayout()
         self.title_label = QLabel(title)
-        self.title_label.setFixedWidth(180)  # Reduced from 220
-        layout.addWidget(self.title_label, 0, 1)
+        self.title_label.setStyleSheet("font-weight: bold; font-size: 14px; color: #ffffff;")
+        title_row.addWidget(self.title_label)
         
-        self.res_label = QLabel(res_or_bitrate)
-        self.res_label.setFixedWidth(60)  # Reduced from 70
-        layout.addWidget(self.res_label, 0, 2)
+        self.res_label = QLabel(f"[{res_or_bitrate}]")
+        self.res_label.setStyleSheet("color: #aaa; font-size: 11px;")
+        title_row.addWidget(self.res_label)
+        title_row.addStretch()
         
         self.percent_label = QLabel("0%")
-        self.percent_label.setFixedWidth(35)  # Reduced from 40
-        layout.addWidget(self.percent_label, 0, 4)
+        self.percent_label.setStyleSheet("font-weight: bold; color: #FFD600;")
+        title_row.addWidget(self.percent_label)
+        info_layout.addLayout(title_row)
+        
+        # Progress Bar
+        self.progress = QProgressBar()
+        self.progress.setValue(0)
+        self.progress.setFixedHeight(6)
+        self.progress.setTextVisible(False)
+        self.progress.setStyleSheet("""
+            QProgressBar {
+                background-color: #1e2023;
+                border-radius: 3px;
+                border: none;
+            }
+            QProgressBar::chunk {
+                background-color: #FFD600;
+                border-radius: 3px;
+            }
+        """)
+        info_layout.addWidget(self.progress)
+        
+        # Stats Row (Speed, Size, ETA, Status)
+        stats_row = QHBoxLayout()
+        stats_row.setSpacing(15)
         
         self.status_label = QLabel("Queued")
-        self.status_label.setFixedWidth(60)  # Reduced from 70
-        layout.addWidget(self.status_label, 0, 5)
+        self.status_label.setStyleSheet("color: #FFD600; font-size: 12px; font-weight: bold;")
+        stats_row.addWidget(self.status_label)
         
-        # Bottom row
         self.speed_label = QLabel("0 KB/s")
-        self.speed_label.setFixedWidth(80)  # Reduced from 100
-        layout.addWidget(self.speed_label, 1, 1)
+        self.speed_label.setStyleSheet("color: #aaa; font-size: 11px;")
+        stats_row.addWidget(self.speed_label)
         
         self.size_label = QLabel("0 MB / 0 MB")
-        self.size_label.setFixedWidth(100)  # Reduced from 120
-        layout.addWidget(self.size_label, 1, 2)
+        self.size_label.setStyleSheet("color: #aaa; font-size: 11px;")
+        stats_row.addWidget(self.size_label)
         
         self.eta_label = QLabel("ETA: -")
-        self.eta_label.setFixedWidth(70)  # Reduced from 80
-        layout.addWidget(self.eta_label, 1, 3)
+        self.eta_label.setStyleSheet("color: #aaa; font-size: 11px;")
+        stats_row.addWidget(self.eta_label)
+        
+        stats_row.addStretch()
         
         self.time_label = QLabel(time_started)
-        self.time_label.setFixedWidth(70)  # Reduced from 80
-        layout.addWidget(self.time_label, 1, 4)
+        self.time_label.setStyleSheet("color: #666; font-size: 10px;")
+        stats_row.addWidget(self.time_label)
         
-        # Icon buttons (32px each)
-        self.cancel_btn = QToolButton()
+        info_layout.addLayout(stats_row)
+        card_layout.addLayout(info_layout, stretch=1)
+        
+        # Action Buttons (Section 3 - Right)
+        buttons_layout = QHBoxLayout()
+        buttons_layout.setSpacing(8)
+        
         icon_dir = os.path.join(os.path.dirname(os.path.abspath(__file__)), 'icons')
-        self.cancel_btn.setIcon(QIcon(os.path.join(icon_dir, 'cancel_gray.svg')))
-        self.cancel_btn.setToolTip("Cancel")
-        self.cancel_btn.setFixedSize(32, 32)
-        self.cancel_btn.setEnabled(True)
-        self.retry_btn = QToolButton()
-        self.retry_btn.setIcon(QIcon(os.path.join(icon_dir, 'retry_gray.svg')))
-        self.retry_btn.setToolTip("Retry")
-        self.retry_btn.setFixedSize(32, 32)
-        self.retry_btn.setEnabled(False)
+        
         self.open_btn = QToolButton()
         self.open_btn.setIcon(QIcon(os.path.join(icon_dir, 'folder_gray.svg')))
         self.open_btn.setToolTip("Open Folder")
         self.open_btn.setFixedSize(32, 32)
         self.open_btn.setEnabled(False)
-        # Create a horizontal layout for the three buttons
-        button_layout = QHBoxLayout()
-        button_layout.setSpacing(4)
-        button_layout.setContentsMargins(0, 0, 0, 0)
-        button_layout.addWidget(self.cancel_btn)
-        button_layout.addWidget(self.retry_btn)
-        button_layout.addWidget(self.open_btn)
-        # Add the button layout to the main layout
-        layout.addLayout(button_layout, 1, 5, 1, 3)
+        self.open_btn.setStyleSheet("QToolButton { border: none; background: transparent; } QToolButton:hover { background: #444; border-radius: 4px; }")
         
-        self.progress = QProgressBar()
-        self.progress.setValue(0)
-        self.progress.setFixedHeight(8)
-        self.progress.setTextVisible(False)
-        layout.addWidget(self.progress, 0, 3, 2, 1)
+        self.retry_btn = QToolButton()
+        self.retry_btn.setIcon(QIcon(os.path.join(icon_dir, 'retry_gray.svg')))
+        self.retry_btn.setToolTip("Retry")
+        self.retry_btn.setFixedSize(32, 32)
+        self.retry_btn.setEnabled(False)
+        self.retry_btn.setStyleSheet("QToolButton { border: none; background: transparent; } QToolButton:hover { background: #444; border-radius: 4px; }")
 
-        self.setSizePolicy(QSizePolicy.Policy.Expanding, QSizePolicy.Policy.Fixed)
-        layout.setColumnStretch(8, 1)  # Add stretch at the end to prevent squishing
-        self.setLayout(layout)
+        self.cancel_btn = QToolButton()
+        self.cancel_btn.setIcon(QIcon(os.path.join(icon_dir, 'cancel_gray.svg')))
+        self.cancel_btn.setToolTip("Cancel")
+        self.cancel_btn.setFixedSize(32, 32)
+        self.cancel_btn.setStyleSheet("QToolButton { border: none; background: transparent; } QToolButton:hover { background: #444; border-radius: 4px; }")
+        
+        buttons_layout.addWidget(self.open_btn)
+        buttons_layout.addWidget(self.retry_btn)
+        buttons_layout.addWidget(self.cancel_btn)
+        card_layout.addLayout(buttons_layout)
+        
+        main_layout.addWidget(self.card)
+        self.setLayout(main_layout)
+
+        # Signals and Events
         self.update_progress_signal.connect(self.update_progress)
-        self.cancel_btn.installEventFilter(self)
-        self.retry_btn.installEventFilter(self)
-        self.open_btn.installEventFilter(self)
-        self.cancel_event = threading.Event()
-        self.download_path = None  # Set by main app when known
         self.cancel_btn.clicked.connect(self.cancel_download)
         self.retry_btn.clicked.connect(self.retry_download)
         self.open_btn.clicked.connect(self.open_folder)
+        self.cancel_event = threading.Event()
+        self.download_path = None
+        
+        # Install event filter for hover icons (keeping your existing logic)
+        self.cancel_btn.installEventFilter(self)
+        self.retry_btn.installEventFilter(self)
+        self.open_btn.installEventFilter(self)
 
     def update_progress(self, percent, percent_text, speed_str, size_str, eta_str):
         if speed_str.startswith("Speed: "):
