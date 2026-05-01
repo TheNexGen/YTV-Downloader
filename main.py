@@ -25,7 +25,7 @@ class DownloadRow(QWidget):
 
     def __init__(self, thumb_pixmap, title, fmt, res_or_bitrate, time_started, parent=None):
         super().__init__(parent)
-        self.setFixedHeight(100)
+        self.setFixedHeight(110)
         
         # Main layout for the widget
         main_layout = QVBoxLayout(self)
@@ -60,14 +60,14 @@ class DownloadRow(QWidget):
         
         # Info & Progress (Section 2 - Middle)
         info_layout = QVBoxLayout()
-        info_layout.setSpacing(8)
+        info_layout.setSpacing(5)
         
         # Title and Resolution
         title_row = QHBoxLayout()
         self.title_label = QLabel(title)
         self.title_label.setWordWrap(True)
         self.title_label.setStyleSheet("font-weight: bold; font-size: 13px; color: #ffffff;")
-        self.title_label.setMaximumHeight(40) # Limit to about 2 lines
+        self.title_label.setMaximumHeight(45) # Increased to fit 2 lines comfortably
         title_row.addWidget(self.title_label)
         
         self.res_label = QLabel(f"[{res_or_bitrate}]")
