@@ -295,16 +295,22 @@ class YouTubeDownloaderApp(QMainWindow):
         
         main_layout.addLayout(top_layout)
 
-        columns_layout = QHBoxLayout()
-        main_layout.addLayout(columns_layout)
-
-        left_panel = QWidget()
-        left_layout = QVBoxLayout(left_panel)
-        columns_layout.addWidget(left_panel)
-
+        # Controls area
+        controls_layout = QHBoxLayout()
+        main_layout.addLayout(controls_layout)
+        
+        controls_layout.addStretch(1)
+        
+        center_widget = QWidget()
+        center_widget.setFixedWidth(500)  # Fixed width for a clean look
+        center_layout = QVBoxLayout(center_widget)
+        center_layout.setContentsMargins(0, 20, 0, 20)
+        center_layout.setSpacing(10)
+        
         self.url_entry = QLineEdit()
         self.url_entry.setPlaceholderText("Paste YouTube video URL here...")
-        left_layout.addWidget(self.url_entry)
+        self.url_entry.setFixedHeight(35)
+        center_layout.addWidget(self.url_entry)
 
         self.format_options = [
             "Audio: MP3", "Audio: M4A", "Audio: WEBM", "Audio: AAC", "Audio: FLAC", "Audio: OPUS", "Audio: OGG", "Audio: WAV",
@@ -321,22 +327,22 @@ class YouTubeDownloaderApp(QMainWindow):
         for opt in self.format_options:
             self.format_menu.addItem(opt)
         self.format_menu.setCurrentText("Video: MP4 (720p)")
-        left_layout.addWidget(self.format_menu)
+        self.format_menu.setFixedHeight(35)
+        center_layout.addWidget(self.format_menu)
 
         self.download_btn = QPushButton("Download")
         self.download_btn.setEnabled(True)
         self.download_btn.clicked.connect(self.download_video)
+        self.download_btn.setFixedHeight(40)
         self.set_button_style(self.download_btn)
-        left_layout.addWidget(self.download_btn)
-
-        left_layout.addSpacing(5)
-
-        right_panel = QWidget()
-        right_layout = QVBoxLayout(right_panel)
-        columns_layout.addWidget(right_panel)
+        center_layout.addWidget(self.download_btn)
 
         self.status_label = QLabel()
-        right_layout.addWidget(self.status_label)
+        self.status_label.setAlignment(Qt.AlignmentFlag.AlignCenter)
+        center_layout.addWidget(self.status_label)
+        
+        controls_layout.addWidget(center_widget)
+        controls_layout.addStretch(1)
 
         # Add QScrollArea for download rows below the columns_layout, spanning full width
         self.active_downloads_scroll = QScrollArea()
