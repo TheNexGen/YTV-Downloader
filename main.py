@@ -20,6 +20,7 @@ import subprocess
 
 class DownloadRow(QWidget):
     update_progress_signal = pyqtSignal(int, str, str, str, str)
+    update_status_signal = pyqtSignal(str, str)
     retry_requested = pyqtSignal(object)
 
     def __init__(self, thumb_pixmap, title, fmt, res_or_bitrate, time_started, parent=None):
@@ -160,6 +161,7 @@ class DownloadRow(QWidget):
 
         # Signals and Events
         self.update_progress_signal.connect(self.update_progress)
+        self.update_status_signal.connect(self.update_status)
         self.cancel_btn.clicked.connect(self.cancel_download)
         self.retry_btn.clicked.connect(self.retry_download)
         self.open_btn.clicked.connect(self.open_folder)
@@ -170,6 +172,9 @@ class DownloadRow(QWidget):
         self.cancel_btn.installEventFilter(self)
         self.retry_btn.installEventFilter(self)
         self.open_btn.installEventFilter(self)
+        
+        # Internal status tracking
+        self.current_status = "Queued"
 
     def update_progress(self, percent, percent_text, speed_str, size_str, eta_str):
         if speed_str.startswith("Speed: "):
@@ -179,10 +184,14 @@ class DownloadRow(QWidget):
         self.speed_label.setText(speed_str)
         self.size_label.setText(size_str)
         self.eta_label.setText(eta_str)
-        if self.status_label.text() != "Downloading":
+        
+        # Only switch to 'Downloading' if we are in a starting state
+        if self.current_status in ["Queued", "Retrying...", ""]:
             self.update_status("Downloading", "#FFD600")
 
     def update_status(self, status, color="#FFD600"):
+        print(f"Status Change: {self.current_status} -> {status}")
+        self.current_status = status
         self.status_label.setText(status)
         self.status_label.setStyleSheet(f"color: {color}; font-size: 12px; font-weight: bold;")
         
@@ -599,11 +608,8 @@ class YouTubeDownloaderApp(QMainWindow):
                         f"ETA: {eta}s" if eta is not None else "ETA: -"
                     )
                 elif d['status'] == 'finished':
-                    print("Download finished, merging...")
-                    def update():
-                        row_widget.progress.setValue(100)
-                        row_widget.update_status("Merging", "#00B0FF")
-                    QTimer.singleShot(0, update)
+                    print("Download finished logic triggered in hook")
+                    row_widget.update_status_signal.emit("Merging", "#00B0FF")
             
             ydl_opts = {
                 'format': ydl_format,
@@ -618,8 +624,10 @@ class YouTubeDownloaderApp(QMainWindow):
             ydl_instance = yt_dlp.YoutubeDL(ydl_opts)
             ydl_instance.download([url])
             
-            def update():
-                row_widget.update_status("Complete", "#00E676")
+            print("Download loop finished, setting to Complete")
+            row_widget.update_status_signal.emit("Complete", "#00E676")
+            
+            def final_setup():
                 row_widget.open_btn.setEnabled(True)
                 row_widget.cancel_btn.setEnabled(False)
                 row_widget.retry_btn.setEnabled(False)
@@ -639,11 +647,11 @@ class YouTubeDownloaderApp(QMainWindow):
                                     break
                 except Exception as e:
                     print(f"Error setting download path: {e}")
-            QTimer.singleShot(0, update)
+            QTimer.singleShot(0, final_setup)
             
         except Exception as e:
-            print("Exception in _download_thread:", e)
-            def update():
+            print(f"Exception in _download_thread: {e}")
+            def update_err():
                 if str(e) == "Download canceled by user.":
                     row_widget.update_status("Canceled", "#FF5252")
                     row_widget.progress.setValue(0)
@@ -653,7 +661,7 @@ class YouTubeDownloaderApp(QMainWindow):
                 row_widget.retry_btn.setEnabled(True)
                 row_widget.open_btn.setEnabled(False)
                 row_widget.cancel_btn.setEnabled(False)
-            QTimer.singleShot(0, update)
+            QTimer.singleShot(0, update_err)
 
     def show_about_dialog(self):
         QMessageBox.information(self, "About YTV Downloader", "YTV Downloader beta\nA modern YouTube video downloader built with PyQt6.")
