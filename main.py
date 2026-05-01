@@ -310,7 +310,7 @@ class DownloadRow(QWidget):
 class SettingsDialog(QDialog):
     def __init__(self, parent):
         super().__init__(parent)
-        self.parent = parent
+        self.main_app = parent
         self.setWindowTitle("Settings")
         self.setFixedSize(400, 200)
         
@@ -321,7 +321,7 @@ class SettingsDialog(QDialog):
         layout.addWidget(folder_label)
         
         folder_layout = QHBoxLayout()
-        self.folder_entry = QLineEdit(self.parent.download_folder)
+        self.folder_entry = QLineEdit(self.main_app.download_folder)
         folder_layout.addWidget(self.folder_entry)
         
         self.browse_btn = QPushButton("Browse")
@@ -334,7 +334,7 @@ class SettingsDialog(QDialog):
         
         # Theme Section
         self.theme_switch = QCheckBox("Dark Mode")
-        self.theme_switch.setChecked(self.parent.theme_switch.isChecked())
+        self.theme_switch.setChecked(self.main_app.theme_switch.isChecked())
         self.theme_switch.stateChanged.connect(self.toggle_mode)
         layout.addWidget(self.theme_switch)
         
@@ -343,18 +343,18 @@ class SettingsDialog(QDialog):
         # Close Button
         self.close_btn = QPushButton("Done")
         self.close_btn.clicked.connect(self.accept)
-        self.parent.set_button_style(self.close_btn)
+        self.main_app.set_button_style(self.close_btn)
         layout.addWidget(self.close_btn, alignment=Qt.AlignmentFlag.AlignCenter)
 
     def browse_folder(self):
-        folder = QFileDialog.getExistingDirectory(self, "Select Download Folder", self.parent.download_folder)
+        folder = QFileDialog.getExistingDirectory(self, "Select Download Folder", self.main_app.download_folder)
         if folder:
-            self.parent.download_folder = folder
+            self.main_app.download_folder = folder
             self.folder_entry.setText(folder)
-            self.parent.save_download_folder(folder)
+            self.main_app.save_download_folder(folder)
 
     def toggle_mode(self):
-        self.parent.theme_switch.setChecked(self.theme_switch.isChecked())
+        self.main_app.theme_switch.setChecked(self.theme_switch.isChecked())
         # The parent's toggle_mode will handle the rest via the signal connection
 
 class YouTubeDownloaderApp(QMainWindow):
