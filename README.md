@@ -39,18 +39,3 @@ Download the latest release from the [Releases](https://github.com/TheNexGen/Vid
 6. Monitor progress in the download cards at the bottom
 7. Use the dark mode toggle for your preferred theme
 
-
-### Project Structure
-```
-Video-Downloader/
-├── main.py              # Main application
-├── main.spec            # PyInstaller configuration
-├── build.py             # Build script
-├── requirements.txt     # Python dependencies
-├── Tools/
-│   └── ffmpeg.exe      # Bundled FFmpeg
-├── icons/              # Application icons
-└── .github/workflows/  # GitHub Actions
-```
-
-
