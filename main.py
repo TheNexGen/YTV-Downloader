@@ -178,8 +178,18 @@ class DownloadRow(QWidget):
         self.percent_label.setText(percent_text)
         self.speed_label.setText(speed_str)
         self.size_label.setText(size_str)
-        self.status_label.setText("Downloading")
         self.eta_label.setText(eta_str)
+        if self.status_label.text() != "Downloading":
+            self.update_status("Downloading", "#FFD600")
+
+    def update_status(self, status, color="#FFD600"):
+        self.status_label.setText(status)
+        self.status_label.setStyleSheet(f"color: {color}; font-size: 12px; font-weight: bold;")
+        
+        # Adjust other labels based on status
+        if status in ["Complete", "Canceled", "Error"]:
+            self.speed_label.setText("")
+            self.eta_label.setText("")
 
     def eventFilter(self, obj, event):
         import os
@@ -203,11 +213,11 @@ class DownloadRow(QWidget):
     def cancel_download(self):
         print("Cancel button clicked")
         self.cancel_event.set()
-        self.status_label.setText("Canceling...")
+        self.update_status("Canceling...", "#FF5252")
         self.cancel_btn.setEnabled(False)
         self.retry_btn.setEnabled(True)
     def retry_download(self):
-        self.status_label.setText("Retrying...")
+        self.update_status("Retrying...", "#FFD600")
         self.progress.setValue(0)
         self.percent_label.setText("0%")
         self.retry_btn.setEnabled(False)
@@ -592,8 +602,7 @@ class YouTubeDownloaderApp(QMainWindow):
                     print("Download finished, merging...")
                     def update():
                         row_widget.progress.setValue(100)
-                        row_widget.status_label.setText("Merging")
-                        row_widget.eta_label.setText("ETA: -")
+                        row_widget.update_status("Merging", "#00B0FF")
                     QTimer.singleShot(0, update)
             
             ydl_opts = {
@@ -610,7 +619,7 @@ class YouTubeDownloaderApp(QMainWindow):
             ydl_instance.download([url])
             
             def update():
-                row_widget.status_label.setText("Complete")
+                row_widget.update_status("Complete", "#00E676")
                 row_widget.open_btn.setEnabled(True)
                 row_widget.cancel_btn.setEnabled(False)
                 row_widget.retry_btn.setEnabled(False)
@@ -636,14 +645,11 @@ class YouTubeDownloaderApp(QMainWindow):
             print("Exception in _download_thread:", e)
             def update():
                 if str(e) == "Download canceled by user.":
-                    row_widget.status_label.setText("Canceled")
+                    row_widget.update_status("Canceled", "#FF5252")
                     row_widget.progress.setValue(0)
                     row_widget.percent_label.setText("0%")
-                    row_widget.speed_label.setText("0 KB/s")
-                    row_widget.size_label.setText("0 MB / 0 MB")
-                    row_widget.eta_label.setText("ETA: -")
                 else:
-                    row_widget.status_label.setText("Error")
+                    row_widget.update_status("Error", "#FF5252")
                 row_widget.retry_btn.setEnabled(True)
                 row_widget.open_btn.setEnabled(False)
                 row_widget.cancel_btn.setEnabled(False)
