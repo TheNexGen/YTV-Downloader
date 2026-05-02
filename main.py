@@ -258,9 +258,17 @@ class DownloadRow(QWidget):
         self.status_label.setStyleSheet(f"color: {color}; font-size: 12px; font-weight: bold; background: transparent;")
         
         # Adjust other labels based on status
-        if status in ["Complete", "Canceled", "Error"]:
+        if status == "Complete":
             self.speed_label.setText("")
             self.eta_label.setText("")
+            self.progress.hide()
+            self.percent_label.hide()
+        elif status in ["Canceled", "Error"]:
+            self.speed_label.setText("")
+            self.eta_label.setText("")
+        elif status in ["Downloading", "Retrying..."]:
+            self.progress.show()
+            self.percent_label.show()
 
     def eventFilter(self, obj, event):
         import os
