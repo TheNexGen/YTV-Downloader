@@ -619,7 +619,7 @@ class YouTubeDownloaderApp(QMainWindow):
         print("_add_download_row called: creating DownloadRow and starting download thread")
         row = DownloadRow(thumb_pixmap, title, fmt, res_or_bitrate, time_started, parent=self)
         row.setSizePolicy(QSizePolicy.Policy.Expanding, QSizePolicy.Policy.Fixed)
-        row.retry_requested.connect(lambda row_widget: self._retry_download(row_widget, url, folder, format_text, info))
+        row.retry_requested.connect(lambda rw, u=url, f=folder, ft=format_text, i=info: self._retry_download(rw, u, f, ft, i))
         row.remove_requested.connect(self._remove_download_row)
         self.active_download_rows.append(row)
         self.active_downloads_layout.addWidget(row)
@@ -645,7 +645,7 @@ class YouTubeDownloaderApp(QMainWindow):
         return "-"
 
     def _retry_download(self, row_widget, url, folder, format_text, info):
-        print("_retry_download called")
+        print(f"_retry_download called for: {url}")
         self._start_download_thread(url, folder, format_text, row_widget, info)
 
     def _start_download_thread(self, url, folder, format_text, row_widget, info):
