@@ -22,6 +22,7 @@ class DownloadRow(QWidget):
     update_progress_signal = pyqtSignal(int, str, str, str, str)
     update_status_signal = pyqtSignal(str, str)
     retry_requested = pyqtSignal(object)
+    remove_requested = pyqtSignal(object)
 
     def __init__(self, thumb_pixmap, title, fmt, res_or_bitrate, time_started, parent=None):
         super().__init__(parent)
@@ -150,14 +151,14 @@ class DownloadRow(QWidget):
         self.retry_btn.setFixedSize(32, 32)
         self.retry_btn.setEnabled(False)
 
-        self.cancel_btn = QToolButton()
-        self.cancel_btn.setIcon(QIcon(os.path.join(icon_dir, 'cancel_gray.svg')))
-        self.cancel_btn.setToolTip("Cancel")
-        self.cancel_btn.setFixedSize(32, 32)
+        self.delete_btn = QToolButton()
+        self.delete_btn.setIcon(QIcon(os.path.join(icon_dir, 'cancel_gray.svg')))
+        self.delete_btn.setToolTip("Delete")
+        self.delete_btn.setFixedSize(32, 32)
         
         buttons_layout.addWidget(self.open_btn)
         buttons_layout.addWidget(self.retry_btn)
-        buttons_layout.addWidget(self.cancel_btn)
+        buttons_layout.addWidget(self.delete_btn)
         card_layout.addLayout(buttons_layout)
         
         main_layout.addWidget(self.card)
@@ -169,14 +170,14 @@ class DownloadRow(QWidget):
         # Signals and Events
         self.update_progress_signal.connect(self.update_progress)
         self.update_status_signal.connect(self.update_status)
-        self.cancel_btn.clicked.connect(self.cancel_download)
+        self.delete_btn.clicked.connect(self.delete_download)
         self.retry_btn.clicked.connect(self.retry_download)
         self.open_btn.clicked.connect(self.open_folder)
         self.cancel_event = threading.Event()
         self.download_path = None
         
-        # Install event filter for hover icons (keeping your existing logic)
-        self.cancel_btn.installEventFilter(self)
+        # Install event filter for hover icons
+        self.delete_btn.installEventFilter(self)
         self.retry_btn.installEventFilter(self)
         self.open_btn.installEventFilter(self)
 
@@ -229,10 +230,10 @@ class DownloadRow(QWidget):
             }}
         """)
         
-        btn_style = f"QToolButton {{ border: none; background: transparent; }} QToolButton:hover {{ background: {btn_hover}; border-radius: 4px; }}"
-        self.open_btn.setStyleSheet(btn_style)
-        self.retry_btn.setStyleSheet(btn_style)
-        self.cancel_btn.setStyleSheet(btn_style)
+        btn_style = "QToolButton { border: none; background: transparent; border-radius: 4px; }"
+        self.open_btn.setStyleSheet(btn_style + f" QToolButton:hover {{ background: {btn_hover}; border: 1px solid #00E676; }}")
+        self.retry_btn.setStyleSheet(btn_style + f" QToolButton:hover {{ background: {btn_hover}; border: 1px solid #FFD600; }}")
+        self.delete_btn.setStyleSheet(btn_style + f" QToolButton:hover {{ background: {btn_hover}; border: 1px solid #FF5252; }}")
         
         # Re-apply status color which is dynamic
         self.update_status(self.current_status, self.current_color)
@@ -258,43 +259,64 @@ class DownloadRow(QWidget):
         self.status_label.setStyleSheet(f"color: {color}; font-size: 12px; font-weight: bold; background: transparent;")
         
         # Adjust other labels based on status
-        if status in ["Complete", "Canceled", "Error"]:
+        if status == "Complete":
             self.speed_label.setText("")
             self.eta_label.setText("")
+            self.progress.hide()
+            self.percent_label.hide()
+            self.open_btn.setEnabled(True)
+            self.retry_btn.setEnabled(False)
+        elif status in ["Canceled", "Error"]:
+            self.speed_label.setText("")
+            self.eta_label.setText("")
+            self.open_btn.setEnabled(False)
+            self.retry_btn.setEnabled(True)
+        elif status in ["Downloading", "Merging", "Queued", "Retrying..."]:
+            self.progress.show()
+            self.percent_label.show()
+            self.open_btn.setEnabled(False)
+            self.retry_btn.setEnabled(False)
 
     def eventFilter(self, obj, event):
         import os
         icon_dir = os.path.join(os.path.dirname(os.path.abspath(__file__)), 'icons')
+        is_dark = self.main_app.theme_switch.isChecked()
+        suffix = 'white.svg' if is_dark else 'gray.svg'
+        
         if event.type() == QEvent.Type.Enter:
-            if obj == self.cancel_btn:
-                self.cancel_btn.setIcon(QIcon(os.path.join(icon_dir, 'cancel_white.svg')))
+            if obj == self.open_btn:
+                self.open_btn.setIcon(QIcon(os.path.join(icon_dir, f'folder_{suffix}')))
             elif obj == self.retry_btn:
-                self.retry_btn.setIcon(QIcon(os.path.join(icon_dir, 'retry_white.svg')))
-            elif obj == self.open_btn:
-                self.open_btn.setIcon(QIcon(os.path.join(icon_dir, 'folder_white.svg')))
+                self.retry_btn.setIcon(QIcon(os.path.join(icon_dir, f'retry_{suffix}')))
+            elif obj == self.delete_btn:
+                self.delete_btn.setIcon(QIcon(os.path.join(icon_dir, f'cancel_{suffix}')))
         elif event.type() == QEvent.Type.Leave:
-            if obj == self.cancel_btn:
-                self.cancel_btn.setIcon(QIcon(os.path.join(icon_dir, 'cancel_gray.svg')))
+            if obj == self.open_btn:
+                self.open_btn.setIcon(QIcon(os.path.join(icon_dir, 'folder_gray.svg')))
             elif obj == self.retry_btn:
                 self.retry_btn.setIcon(QIcon(os.path.join(icon_dir, 'retry_gray.svg')))
-            elif obj == self.open_btn:
-                self.open_btn.setIcon(QIcon(os.path.join(icon_dir, 'folder_gray.svg')))
+            elif obj == self.delete_btn:
+                self.delete_btn.setIcon(QIcon(os.path.join(icon_dir, 'cancel_gray.svg')))
         return super().eventFilter(obj, event)
 
-    def cancel_download(self):
-        print("Cancel button clicked")
-        self.cancel_event.set()
-        self.update_status("Canceling...", "#FF5252")
-        self.cancel_btn.setEnabled(False)
-        self.retry_btn.setEnabled(True)
+    def delete_download(self):
+        print("Delete button clicked")
+        # If active, cancel first
+        if self.current_status in ["Downloading", "Merging", "Queued", "Retrying..."]:
+            self.cancel_event.set()
+            
+        # Optional: Actually delete the file if it exists? 
+        # For now, let's just remove from UI to be safe.
+        self.remove_requested.emit(self)
+
     def retry_download(self):
         self.update_status("Retrying...", "#FFD600")
         self.progress.setValue(0)
         self.percent_label.setText("0%")
         self.retry_btn.setEnabled(False)
-        self.cancel_btn.setEnabled(True)
         self.cancel_event.clear()
         self.retry_requested.emit(self)
+
     def open_folder(self):
         if self.download_path and os.path.exists(self.download_path):
             folder = os.path.dirname(self.download_path)
@@ -597,11 +619,19 @@ class YouTubeDownloaderApp(QMainWindow):
         print("_add_download_row called: creating DownloadRow and starting download thread")
         row = DownloadRow(thumb_pixmap, title, fmt, res_or_bitrate, time_started, parent=self)
         row.setSizePolicy(QSizePolicy.Policy.Expanding, QSizePolicy.Policy.Fixed)
-        row.retry_requested.connect(lambda row_widget: self._retry_download(row_widget, url, folder, format_text, info))
+        row.retry_requested.connect(lambda rw, u=url, f=folder, ft=format_text, i=info: self._retry_download(rw, u, f, ft, i))
+        row.remove_requested.connect(self._remove_download_row)
         self.active_download_rows.append(row)
         self.active_downloads_layout.addWidget(row)
         self.active_downloads_widget.adjustSize()
         self._start_download_thread(url, folder, format_text, row, info)
+
+    def _remove_download_row(self, row_widget):
+        print(f"Removing download row: {row_widget.title_label.text()}")
+        if row_widget in self.active_download_rows:
+            self.active_download_rows.remove(row_widget)
+        self.active_downloads_layout.removeWidget(row_widget)
+        row_widget.deleteLater()
 
     def _get_res_or_bitrate(self, info, format_text):
         if format_text.startswith("Audio: "):
@@ -615,7 +645,7 @@ class YouTubeDownloaderApp(QMainWindow):
         return "-"
 
     def _retry_download(self, row_widget, url, folder, format_text, info):
-        print("_retry_download called")
+        print(f"_retry_download called for: {url}")
         self._start_download_thread(url, folder, format_text, row_widget, info)
 
     def _start_download_thread(self, url, folder, format_text, row_widget, info):
@@ -695,7 +725,7 @@ class YouTubeDownloaderApp(QMainWindow):
             
             def final_setup():
                 row_widget.open_btn.setEnabled(True)
-                row_widget.cancel_btn.setEnabled(False)
+                row_widget.delete_btn.setEnabled(True)
                 row_widget.retry_btn.setEnabled(False)
                 # Find the actual downloaded file path
                 try:
@@ -726,7 +756,7 @@ class YouTubeDownloaderApp(QMainWindow):
                     row_widget.update_status("Error", "#FF5252")
                 row_widget.retry_btn.setEnabled(True)
                 row_widget.open_btn.setEnabled(False)
-                row_widget.cancel_btn.setEnabled(False)
+                row_widget.delete_btn.setEnabled(True)
             QTimer.singleShot(0, update_err)
 
     def show_about_dialog(self):
