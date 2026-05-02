@@ -264,12 +264,18 @@ class DownloadRow(QWidget):
             self.eta_label.setText("")
             self.progress.hide()
             self.percent_label.hide()
+            self.open_btn.setEnabled(True)
+            self.retry_btn.setEnabled(False)
         elif status in ["Canceled", "Error"]:
             self.speed_label.setText("")
             self.eta_label.setText("")
-        elif status in ["Downloading", "Retrying..."]:
+            self.open_btn.setEnabled(False)
+            self.retry_btn.setEnabled(True)
+        elif status in ["Downloading", "Merging", "Queued", "Retrying..."]:
             self.progress.show()
             self.percent_label.show()
+            self.open_btn.setEnabled(False)
+            self.retry_btn.setEnabled(False)
 
     def eventFilter(self, obj, event):
         import os
@@ -719,7 +725,7 @@ class YouTubeDownloaderApp(QMainWindow):
             
             def final_setup():
                 row_widget.open_btn.setEnabled(True)
-                row_widget.cancel_btn.setEnabled(False)
+                row_widget.delete_btn.setEnabled(True)
                 row_widget.retry_btn.setEnabled(False)
                 # Find the actual downloaded file path
                 try:
@@ -750,7 +756,7 @@ class YouTubeDownloaderApp(QMainWindow):
                     row_widget.update_status("Error", "#FF5252")
                 row_widget.retry_btn.setEnabled(True)
                 row_widget.open_btn.setEnabled(False)
-                row_widget.cancel_btn.setEnabled(False)
+                row_widget.delete_btn.setEnabled(True)
             QTimer.singleShot(0, update_err)
 
     def show_about_dialog(self):
