@@ -265,7 +265,7 @@ class DownloadRow(QWidget):
             self.progress.hide()
             self.percent_label.hide()
             self.open_btn.setEnabled(True)
-            self.retry_btn.setEnabled(False)
+            self.retry_btn.setEnabled(True) # Allow redownloading
         elif status in ["Canceled", "Error"]:
             self.speed_label.setText("")
             self.eta_label.setText("")
@@ -310,11 +310,13 @@ class DownloadRow(QWidget):
         self.remove_requested.emit(self)
 
     def retry_download(self):
+        print(f"DownloadRow: Retry button clicked for {self.title_label.text()}")
         self.update_status("Retrying...", "#FFD600")
         self.progress.setValue(0)
         self.percent_label.setText("0%")
         self.retry_btn.setEnabled(False)
         self.cancel_event.clear()
+        print("DownloadRow: Emitting retry_requested signal")
         self.retry_requested.emit(self)
 
     def open_folder(self):
