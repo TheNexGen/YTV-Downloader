@@ -265,7 +265,7 @@ class DownloadRow(QWidget):
             self.progress.hide()
             self.percent_label.hide()
             self.open_btn.setEnabled(True)
-            self.retry_btn.setEnabled(False)
+            self.retry_btn.setEnabled(True) # Allow redownloading
         elif status in ["Canceled", "Error"]:
             self.speed_label.setText("")
             self.eta_label.setText("")
@@ -310,11 +310,13 @@ class DownloadRow(QWidget):
         self.remove_requested.emit(self)
 
     def retry_download(self):
+        print(f"DownloadRow: Retry button clicked for {self.title_label.text()}")
         self.update_status("Retrying...", "#FFD600")
         self.progress.setValue(0)
         self.percent_label.setText("0%")
         self.retry_btn.setEnabled(False)
         self.cancel_event.clear()
+        print("DownloadRow: Emitting retry_requested signal")
         self.retry_requested.emit(self)
 
     def open_folder(self):
@@ -536,29 +538,88 @@ class YouTubeDownloaderApp(QMainWindow):
         """)
 
     def set_dark_mode(self, enabled):
+        import os
+        icon_dir = os.path.join(os.path.dirname(os.path.abspath(__file__)), 'icons')
+        yellow_arrow = os.path.join(icon_dir, 'down_arrow_yellow.svg').replace('\\', '/')
+        dark_arrow = os.path.join(icon_dir, 'down_arrow_dark.svg').replace('\\', '/')
+
         if enabled:
-            self.setStyleSheet("""
-                QMainWindow, QWidget { background: #232629; color: #f0f0f0; }
-                QLabel, QLineEdit, QComboBox, QPushButton {
+            self.setStyleSheet(f"""
+                QMainWindow, QWidget {{ background: #232629; color: #f0f0f0; }}
+                QLabel, QLineEdit, QComboBox, QPushButton {{
                     color: #f0f0f0;
                     background: #232629;
-                }
-                QPushButton { background: #FFD600; color: #333333; border-radius: 8px; }
-                QPushButton:hover { background: #FFEA00; }
-                QPushButton:disabled { background: #e0e0e0; color: #888888; border-radius: 8px; }
-                QLineEdit, QComboBox { background: #333; border: 1px solid #888; border-radius: 8px; }
+                }}
+                QPushButton {{ background: #FFD600; color: #333333; border-radius: 8px; font-weight: bold; }}
+                QPushButton:hover {{ background: #FFEA00; }}
+                QPushButton:disabled {{ background: #e0e0e0; color: #888888; border-radius: 8px; }}
+                QLineEdit {{ background: #333; border: 1px solid #555; border-radius: 8px; padding: 5px; }}
+                QComboBox {{ 
+                    background: #333; 
+                    border: 1px solid #555; 
+                    border-radius: 8px; 
+                    padding: 5px 15px;
+                    min-width: 200px;
+                }}
+                QComboBox::drop-down {{
+                    subcontrol-origin: padding;
+                    subcontrol-position: top right;
+                    width: 30px;
+                    border: none;
+                }}
+                QComboBox::down-arrow {{
+                    image: url("{yellow_arrow}");
+                    width: 12px;
+                    height: 12px;
+                }}
+                QComboBox QAbstractItemView {{
+                    background-color: #333;
+                    color: #f0f0f0;
+                    selection-background-color: #FFD600;
+                    selection-color: #333;
+                    border: 1px solid #555;
+                    border-radius: 8px;
+                    outline: none;
+                }}
             """)
         else:
-            self.setStyleSheet("""
-                QMainWindow, QWidget { background: #fafafa; color: #222; }
-                QLabel, QLineEdit, QComboBox, QPushButton {
+            self.setStyleSheet(f"""
+                QMainWindow, QWidget {{ background: #fafafa; color: #222; }}
+                QLabel, QLineEdit, QComboBox, QPushButton {{
                     color: #222;
                     background: #fafafa;
-                }
-                QPushButton { background: #FFD600; color: #333333; border-radius: 8px; }
-                QPushButton:hover { background: #FFEA00; }
-                QPushButton:disabled { background: #e0e0e0; color: #888888; border-radius: 8px; }
-                QLineEdit, QComboBox { background: #fff; border: 1px solid #ccc; border-radius: 8px; }
+                }}
+                QPushButton {{ background: #FFD600; color: #333333; border-radius: 8px; font-weight: bold; }}
+                QPushButton:hover {{ background: #FFEA00; }}
+                QPushButton:disabled {{ background: #e0e0e0; color: #888888; border-radius: 8px; }}
+                QLineEdit {{ background: #fff; border: 1px solid #ccc; border-radius: 8px; padding: 5px; }}
+                QComboBox {{ 
+                    background: #fff; 
+                    border: 1px solid #ccc; 
+                    border-radius: 8px; 
+                    padding: 5px 15px;
+                    min-width: 200px;
+                }}
+                QComboBox::drop-down {{
+                    subcontrol-origin: padding;
+                    subcontrol-position: top right;
+                    width: 30px;
+                    border: none;
+                }}
+                QComboBox::down-arrow {{
+                    image: url("{dark_arrow}");
+                    width: 12px;
+                    height: 12px;
+                }}
+                QComboBox QAbstractItemView {{
+                    background-color: #fff;
+                    color: #222;
+                    selection-background-color: #FFD600;
+                    selection-color: #333;
+                    border: 1px solid #ccc;
+                    border-radius: 8px;
+                    outline: none;
+                }}
             """)
         
         # Update existing download rows
