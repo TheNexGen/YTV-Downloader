@@ -545,10 +545,37 @@ class YouTubeDownloaderApp(QMainWindow):
                     color: #f0f0f0;
                     background: #232629;
                 }
-                QPushButton { background: #FFD600; color: #333333; border-radius: 8px; }
+                QPushButton { background: #FFD600; color: #333333; border-radius: 8px; font-weight: bold; }
                 QPushButton:hover { background: #FFEA00; }
                 QPushButton:disabled { background: #e0e0e0; color: #888888; border-radius: 8px; }
-                QLineEdit, QComboBox { background: #333; border: 1px solid #888; border-radius: 8px; }
+                QLineEdit { background: #333; border: 1px solid #555; border-radius: 8px; padding: 5px; }
+                QComboBox { 
+                    background: #333; 
+                    border: 1px solid #555; 
+                    border-radius: 8px; 
+                    padding: 5px 15px;
+                    min-width: 200px;
+                }
+                QComboBox::drop-down {
+                    subcontrol-origin: padding;
+                    subcontrol-position: top right;
+                    width: 30px;
+                    border: none;
+                }
+                QComboBox::down-arrow {
+                    image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='12' height='12' viewBox='0 0 24 24' fill='none' stroke='%23FFD600' stroke-width='3' stroke-linecap='round' stroke-linejoin='round'%3E%3Cpolyline points='6 9 12 15 18 9'%3E%3C/polyline%3E%3C/svg%3E");
+                    width: 12px;
+                    height: 12px;
+                }
+                QComboBox QAbstractItemView {
+                    background-color: #333;
+                    color: #f0f0f0;
+                    selection-background-color: #FFD600;
+                    selection-color: #333;
+                    border: 1px solid #555;
+                    border-radius: 8px;
+                    outline: none;
+                }
             """)
         else:
             self.setStyleSheet("""
@@ -557,10 +584,37 @@ class YouTubeDownloaderApp(QMainWindow):
                     color: #222;
                     background: #fafafa;
                 }
-                QPushButton { background: #FFD600; color: #333333; border-radius: 8px; }
+                QPushButton { background: #FFD600; color: #333333; border-radius: 8px; font-weight: bold; }
                 QPushButton:hover { background: #FFEA00; }
                 QPushButton:disabled { background: #e0e0e0; color: #888888; border-radius: 8px; }
-                QLineEdit, QComboBox { background: #fff; border: 1px solid #ccc; border-radius: 8px; }
+                QLineEdit { background: #fff; border: 1px solid #ccc; border-radius: 8px; padding: 5px; }
+                QComboBox { 
+                    background: #fff; 
+                    border: 1px solid #ccc; 
+                    border-radius: 8px; 
+                    padding: 5px 15px;
+                    min-width: 200px;
+                }
+                QComboBox::drop-down {
+                    subcontrol-origin: padding;
+                    subcontrol-position: top right;
+                    width: 30px;
+                    border: none;
+                }
+                QComboBox::down-arrow {
+                    image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='12' height='12' viewBox='0 0 24 24' fill='none' stroke='%23333333' stroke-width='3' stroke-linecap='round' stroke-linejoin='round'%3E%3Cpolyline points='6 9 12 15 18 9'%3E%3C/polyline%3E%3C/svg%3E");
+                    width: 12px;
+                    height: 12px;
+                }
+                QComboBox QAbstractItemView {
+                    background-color: #fff;
+                    color: #222;
+                    selection-background-color: #FFD600;
+                    selection-color: #333;
+                    border: 1px solid #ccc;
+                    border-radius: 8px;
+                    outline: none;
+                }
             """)
         
         # Update existing download rows
