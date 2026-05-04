@@ -273,6 +273,16 @@ class DownloadRow(QWidget):
             
             # Schedule final size check in the UI thread
             QTimer.singleShot(1000, self.final_size_check)
+        elif status in ["Canceled", "Error"]:
+            self.speed_label.setText("")
+            self.eta_label.setText("")
+            self.open_btn.setEnabled(False)
+            self.retry_btn.setEnabled(True)
+        elif status in ["Downloading", "Merging", "Queued", "Retrying..."]:
+            self.progress.show()
+            self.percent_label.show()
+            self.open_btn.setEnabled(False)
+            self.retry_btn.setEnabled(False)
 
     def final_size_check(self):
         print(f"final_size_check started for: {self.title_label.text()}")
@@ -302,18 +312,6 @@ class DownloadRow(QWidget):
                 print("final_size_check: Could not find final file on disk.")
         except Exception as e:
             print(f"Error in final_size_check: {e}")
-            self.open_btn.setEnabled(True)
-            self.retry_btn.setEnabled(True) # Allow redownloading
-        elif status in ["Canceled", "Error"]:
-            self.speed_label.setText("")
-            self.eta_label.setText("")
-            self.open_btn.setEnabled(False)
-            self.retry_btn.setEnabled(True)
-        elif status in ["Downloading", "Merging", "Queued", "Retrying..."]:
-            self.progress.show()
-            self.percent_label.show()
-            self.open_btn.setEnabled(False)
-            self.retry_btn.setEnabled(False)
 
     def eventFilter(self, obj, event):
         import os
