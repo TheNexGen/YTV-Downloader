@@ -812,6 +812,8 @@ class YouTubeDownloaderApp(QMainWindow):
                 'noplaylist': True,
                 'merge_output_format': None,
                 'ffmpeg_location': ffmpeg_path,
+                'socket_timeout': 30,
+                'retries': 10,
             }
             
             ydl_instance = yt_dlp.YoutubeDL(ydl_opts)
