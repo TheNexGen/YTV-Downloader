@@ -239,6 +239,9 @@ class DownloadRow(QWidget):
         self.update_status(self.current_status, self.current_color)
 
     def update_progress(self, percent, percent_text, speed_str, size_str, eta_str):
+        if self.current_status == "Complete":
+            return
+            
         if speed_str.startswith("Speed: "):
             speed_str = speed_str.replace("Speed: ", "")
         self.progress.setValue(percent)
@@ -265,7 +268,11 @@ class DownloadRow(QWidget):
             self.progress.hide()
             self.percent_label.hide()
             self.open_btn.setEnabled(True)
-            self.retry_btn.setEnabled(True) # Allow redownloading
+            self.delete_btn.setEnabled(True)
+            self.retry_btn.setEnabled(True)
+            
+            # Schedule final size check in the UI thread
+            QTimer.singleShot(1000, self.final_size_check)
         elif status in ["Canceled", "Error"]:
             self.speed_label.setText("")
             self.eta_label.setText("")
@@ -276,6 +283,35 @@ class DownloadRow(QWidget):
             self.percent_label.show()
             self.open_btn.setEnabled(False)
             self.retry_btn.setEnabled(False)
+
+    def final_size_check(self):
+        print(f"final_size_check started for: {self.title_label.text()}")
+        try:
+            filename = None
+            if hasattr(self, 'final_download_info'):
+                # Try _filename first
+                filename = self.final_download_info.get('_filename')
+                if not filename or not os.path.exists(filename):
+                    # Try requested_downloads
+                    req = self.final_download_info.get('requested_downloads')
+                    if req and len(req) > 0:
+                        filename = req[0].get('filepath')
+            
+            if filename and os.path.exists(filename):
+                self.download_path = filename
+            
+            if self.download_path and os.path.exists(self.download_path):
+                size_bytes = os.path.getsize(self.download_path)
+                if size_bytes > 1024 * 1024 * 1024:
+                    size_str = f"{size_bytes / (1024*1024*1024):.2f} GB"
+                else:
+                    size_str = f"{size_bytes / (1024*1024):.2f} MB"
+                self.size_label.setText(f"Size: {size_str}")
+                print(f"final_size_check: Successfully set size to {size_str}")
+            else:
+                print("final_size_check: Could not find final file on disk.")
+        except Exception as e:
+            print(f"Error in final_size_check: {e}")
 
     def eventFilter(self, obj, event):
         import os
@@ -779,32 +815,14 @@ class YouTubeDownloaderApp(QMainWindow):
             }
             
             ydl_instance = yt_dlp.YoutubeDL(ydl_opts)
-            ydl_instance.download([url])
+            # Use extract_info with download=True to get the final info_dict which contains the merged filename
+            final_info = ydl_instance.extract_info(url, download=True)
+            
+            # Store the final info in the row widget so the UI thread can access it
+            row_widget.final_download_info = final_info
             
             print("Download loop finished, setting to Complete")
             row_widget.update_status_signal.emit("Complete", "#00E676")
-            
-            def final_setup():
-                row_widget.open_btn.setEnabled(True)
-                row_widget.delete_btn.setEnabled(True)
-                row_widget.retry_btn.setEnabled(False)
-                # Find the actual downloaded file path
-                try:
-                    # Get the actual filename from the info
-                    filename = ydl_instance.prepare_filename(info)
-                    if os.path.exists(filename):
-                        row_widget.download_path = filename
-                    else:
-                        # Try to find the file in the download folder
-                        for file in os.listdir(folder):
-                            if file.endswith(('.mp4', '.m4a', '.mp3', '.webm', '.aac', '.flac', '.opus', '.ogg', '.wav')):
-                                file_path = os.path.join(folder, file)
-                                if os.path.isfile(file_path):
-                                    row_widget.download_path = file_path
-                                    break
-                except Exception as e:
-                    print(f"Error setting download path: {e}")
-            QTimer.singleShot(0, final_setup)
             
         except Exception as e:
             print(f"Exception in _download_thread: {e}")
