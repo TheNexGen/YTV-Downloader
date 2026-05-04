@@ -802,8 +802,17 @@ class YouTubeDownloaderApp(QMainWindow):
                                 if os.path.isfile(file_path):
                                     row_widget.download_path = file_path
                                     break
+                    
+                    # Update size label with actual file size
+                    if row_widget.download_path and os.path.exists(row_widget.download_path):
+                        size_bytes = os.path.getsize(row_widget.download_path)
+                        if size_bytes > 1024 * 1024 * 1024:
+                            size_str = f"{size_bytes / (1024*1024*1024):.2f} GB"
+                        else:
+                            size_str = f"{size_bytes / (1024*1024):.2f} MB"
+                        row_widget.size_label.setText(f"Size: {size_str}")
                 except Exception as e:
-                    print(f"Error setting download path: {e}")
+                    print(f"Error setting download path or size: {e}")
             QTimer.singleShot(0, final_setup)
             
         except Exception as e:
