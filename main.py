@@ -425,7 +425,8 @@ class YouTubeDownloaderApp(QMainWindow):
     def __init__(self):
         super().__init__()
         self.setWindowTitle("YTV Downloader beta")
-        self.setWindowIcon(QIcon("ytdownloadlogo.ico"))
+        logo_path = os.path.join(os.path.dirname(os.path.abspath(__file__)), 'ytdownloadlogo.ico')
+        self.setWindowIcon(QIcon(logo_path))
         self.resize(700, 600)
         self.download_folder = self.load_download_folder()
         self.active_download_rows = []
@@ -473,6 +474,7 @@ class YouTubeDownloaderApp(QMainWindow):
         main_layout.setSpacing(0)
 
         top_layout = QHBoxLayout()
+        top_layout.setContentsMargins(20, 15, 20, 10)
         self.title_label = QLabel("YTV Downloader")
         self.title_label.setStyleSheet("font-size: 22px; font-weight: bold;")
         top_layout.addWidget(self.title_label)
