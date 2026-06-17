@@ -1,4 +1,5 @@
 <img width="1928" height="602" alt="YTVbannerv1" src="https://github.com/user-attachments/assets/51bec522-b4b9-4ddc-83b9-557ed9f8bdda" />
+<img width="1928" height="602" alt="YTVbannerv2" src="https://github.com/user-attachments/assets/d6bc484f-cec4-46d7-9896-3cb0dd3543e3" />
 
 ## YTV Downloader
 
