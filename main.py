@@ -588,7 +588,7 @@ class YouTubeDownloaderApp(QMainWindow):
                     color: #f0f0f0;
                     background: #232629;
                 }}
-                QPushButton {{ background: #FFD600; color: #333333; border-radius: 8px; font-weight: bold; }}
+                QPushButton {{ background: #FFD600; color: #333333; border-radius: 6px; font-weight: bold; padding: 6px 14px; min-width: 70px; min-height: 20px; }}
                 QPushButton:hover {{ background: #FFEA00; }}
                 QPushButton:disabled {{ background: #e0e0e0; color: #888888; border-radius: 8px; }}
                 QLineEdit {{ background: #333; border: 1px solid #555; border-radius: 8px; padding: 5px; }}
@@ -627,7 +627,7 @@ class YouTubeDownloaderApp(QMainWindow):
                     color: #222;
                     background: #fafafa;
                 }}
-                QPushButton {{ background: #FFD600; color: #333333; border-radius: 8px; font-weight: bold; }}
+                QPushButton {{ background: #FFD600; color: #333333; border-radius: 6px; font-weight: bold; padding: 6px 14px; min-width: 70px; min-height: 20px; }}
                 QPushButton:hover {{ background: #FFEA00; }}
                 QPushButton:disabled {{ background: #e0e0e0; color: #888888; border-radius: 8px; }}
                 QLineEdit {{ background: #fff; border: 1px solid #ccc; border-radius: 8px; padding: 5px; }}
