@@ -424,8 +424,9 @@ class YouTubeDownloaderApp(QMainWindow):
 
     def __init__(self):
         super().__init__()
-        self.setWindowTitle("YTV Downloader beta")
-        self.setWindowIcon(QIcon("ytdownloadlogo.ico"))
+        self.setWindowTitle("YTV Downloader v1.0.2")
+        logo_path = os.path.join(os.path.dirname(os.path.abspath(__file__)), 'ytdownloadlogo.ico')
+        self.setWindowIcon(QIcon(logo_path))
         self.resize(700, 600)
         self.download_folder = self.load_download_folder()
         self.active_download_rows = []
@@ -473,6 +474,7 @@ class YouTubeDownloaderApp(QMainWindow):
         main_layout.setSpacing(0)
 
         top_layout = QHBoxLayout()
+        top_layout.setContentsMargins(20, 15, 20, 10)
         self.title_label = QLabel("YTV Downloader")
         self.title_label.setStyleSheet("font-size: 22px; font-weight: bold;")
         top_layout.addWidget(self.title_label)
@@ -505,7 +507,7 @@ class YouTubeDownloaderApp(QMainWindow):
 
         self.format_options = [
             "Audio: MP3", "Audio: M4A", "Audio: WEBM", "Audio: AAC", "Audio: FLAC", "Audio: OPUS", "Audio: OGG", "Audio: WAV",
-            "────────────",
+            "SEPARATOR",
             "Video: MP4 (144p)",
             "Video: MP4 (240p)",
             "Video: MP4 (360p)",
@@ -516,7 +518,10 @@ class YouTubeDownloaderApp(QMainWindow):
         ]
         self.format_menu = QComboBox()
         for opt in self.format_options:
-            self.format_menu.addItem(opt)
+            if opt == "SEPARATOR":
+                self.format_menu.insertSeparator(self.format_menu.count())
+            else:
+                self.format_menu.addItem(opt)
         self.format_menu.setCurrentText("Video: MP4 (720p)")
         self.format_menu.setFixedHeight(35)
         center_layout.addWidget(self.format_menu)
@@ -582,11 +587,33 @@ class YouTubeDownloaderApp(QMainWindow):
         if enabled:
             self.setStyleSheet(f"""
                 QMainWindow, QWidget {{ background: #232629; color: #f0f0f0; }}
+                QScrollBar:vertical {{
+                    border: none;
+                    background: #232629;
+                    width: 10px;
+                    margin: 0px;
+                }}
+                QScrollBar::handle:vertical {{
+                    background: #4f5358;
+                    min-height: 20px;
+                    border-radius: 5px;
+                }}
+                QScrollBar::handle:vertical:hover {{
+                    background: #FFD600;
+                }}
+                QScrollBar::add-line:vertical, QScrollBar::sub-line:vertical {{
+                    border: none;
+                    background: none;
+                    height: 0px;
+                }}
+                QScrollBar::add-page:vertical, QScrollBar::sub-page:vertical {{
+                    background: none;
+                }}
                 QLabel, QLineEdit, QComboBox, QPushButton {{
                     color: #f0f0f0;
                     background: #232629;
                 }}
-                QPushButton {{ background: #FFD600; color: #333333; border-radius: 8px; font-weight: bold; }}
+                QPushButton {{ background: #FFD600; color: #333333; border-radius: 6px; font-weight: bold; padding: 6px 14px; min-width: 70px; min-height: 20px; }}
                 QPushButton:hover {{ background: #FFEA00; }}
                 QPushButton:disabled {{ background: #e0e0e0; color: #888888; border-radius: 8px; }}
                 QLineEdit {{ background: #333; border: 1px solid #555; border-radius: 8px; padding: 5px; }}
@@ -621,11 +648,33 @@ class YouTubeDownloaderApp(QMainWindow):
         else:
             self.setStyleSheet(f"""
                 QMainWindow, QWidget {{ background: #fafafa; color: #222; }}
+                QScrollBar:vertical {{
+                    border: none;
+                    background: #fafafa;
+                    width: 10px;
+                    margin: 0px;
+                }}
+                QScrollBar::handle:vertical {{
+                    background: #ccc;
+                    min-height: 20px;
+                    border-radius: 5px;
+                }}
+                QScrollBar::handle:vertical:hover {{
+                    background: #FFD600;
+                }}
+                QScrollBar::add-line:vertical, QScrollBar::sub-line:vertical {{
+                    border: none;
+                    background: none;
+                    height: 0px;
+                }}
+                QScrollBar::add-page:vertical, QScrollBar::sub-page:vertical {{
+                    background: none;
+                }}
                 QLabel, QLineEdit, QComboBox, QPushButton {{
                     color: #222;
                     background: #fafafa;
                 }}
-                QPushButton {{ background: #FFD600; color: #333333; border-radius: 8px; font-weight: bold; }}
+                QPushButton {{ background: #FFD600; color: #333333; border-radius: 6px; font-weight: bold; padding: 6px 14px; min-width: 70px; min-height: 20px; }}
                 QPushButton:hover {{ background: #FFEA00; }}
                 QPushButton:disabled {{ background: #e0e0e0; color: #888888; border-radius: 8px; }}
                 QLineEdit {{ background: #fff; border: 1px solid #ccc; border-radius: 8px; padding: 5px; }}
@@ -812,6 +861,8 @@ class YouTubeDownloaderApp(QMainWindow):
                 'noplaylist': True,
                 'merge_output_format': None,
                 'ffmpeg_location': ffmpeg_path,
+                'socket_timeout': 30,
+                'retries': 10,
             }
             
             ydl_instance = yt_dlp.YoutubeDL(ydl_opts)
@@ -839,7 +890,7 @@ class YouTubeDownloaderApp(QMainWindow):
             QTimer.singleShot(0, update_err)
 
     def show_about_dialog(self):
-        QMessageBox.information(self, "About YTV Downloader", "YTV Downloader beta\nA modern YouTube video downloader built with PyQt6.")
+        QMessageBox.information(self, "About YTV Downloader", "YTV Downloader \nA work in progress modern YouTube video downloader built for easy use and an array of features.")
 
     def show_settings_dialog(self):
         dialog = SettingsDialog(self)

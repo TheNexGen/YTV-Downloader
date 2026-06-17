@@ -25,7 +25,7 @@ def build_executable():
     
     # Run PyInstaller
     result = subprocess.run([
-        sys.executable, '-m', 'PyInstaller', 'main.spec',
+        sys.executable, '-m', 'PyInstaller', 'YTV-Downloader.spec',
         '--clean', '--noconfirm'
     ], capture_output=True, text=True)
     
