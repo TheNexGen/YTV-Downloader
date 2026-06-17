@@ -843,7 +843,7 @@ class YouTubeDownloaderApp(QMainWindow):
             QTimer.singleShot(0, update_err)
 
     def show_about_dialog(self):
-        QMessageBox.information(self, "About YTV Downloader", "YTV Downloader beta\nA modern YouTube video downloader built with PyQt6.")
+        QMessageBox.information(self, "About YTV Downloader", "YTV Downloader \nA work in progress modern YouTube video downloader built for easy use and an array of features.")
 
     def show_settings_dialog(self):
         dialog = SettingsDialog(self)
