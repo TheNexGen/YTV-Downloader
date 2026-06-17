@@ -507,7 +507,7 @@ class YouTubeDownloaderApp(QMainWindow):
 
         self.format_options = [
             "Audio: MP3", "Audio: M4A", "Audio: WEBM", "Audio: AAC", "Audio: FLAC", "Audio: OPUS", "Audio: OGG", "Audio: WAV",
-            "────────────",
+            "SEPARATOR",
             "Video: MP4 (144p)",
             "Video: MP4 (240p)",
             "Video: MP4 (360p)",
@@ -518,7 +518,10 @@ class YouTubeDownloaderApp(QMainWindow):
         ]
         self.format_menu = QComboBox()
         for opt in self.format_options:
-            self.format_menu.addItem(opt)
+            if opt == "SEPARATOR":
+                self.format_menu.insertSeparator(self.format_menu.count())
+            else:
+                self.format_menu.addItem(opt)
         self.format_menu.setCurrentText("Video: MP4 (720p)")
         self.format_menu.setFixedHeight(35)
         center_layout.addWidget(self.format_menu)
@@ -584,6 +587,28 @@ class YouTubeDownloaderApp(QMainWindow):
         if enabled:
             self.setStyleSheet(f"""
                 QMainWindow, QWidget {{ background: #232629; color: #f0f0f0; }}
+                QScrollBar:vertical {{
+                    border: none;
+                    background: #232629;
+                    width: 10px;
+                    margin: 0px;
+                }}
+                QScrollBar::handle:vertical {{
+                    background: #4f5358;
+                    min-height: 20px;
+                    border-radius: 5px;
+                }}
+                QScrollBar::handle:vertical:hover {{
+                    background: #FFD600;
+                }}
+                QScrollBar::add-line:vertical, QScrollBar::sub-line:vertical {{
+                    border: none;
+                    background: none;
+                    height: 0px;
+                }}
+                QScrollBar::add-page:vertical, QScrollBar::sub-page:vertical {{
+                    background: none;
+                }}
                 QLabel, QLineEdit, QComboBox, QPushButton {{
                     color: #f0f0f0;
                     background: #232629;
@@ -623,6 +648,28 @@ class YouTubeDownloaderApp(QMainWindow):
         else:
             self.setStyleSheet(f"""
                 QMainWindow, QWidget {{ background: #fafafa; color: #222; }}
+                QScrollBar:vertical {{
+                    border: none;
+                    background: #fafafa;
+                    width: 10px;
+                    margin: 0px;
+                }}
+                QScrollBar::handle:vertical {{
+                    background: #ccc;
+                    min-height: 20px;
+                    border-radius: 5px;
+                }}
+                QScrollBar::handle:vertical:hover {{
+                    background: #FFD600;
+                }}
+                QScrollBar::add-line:vertical, QScrollBar::sub-line:vertical {{
+                    border: none;
+                    background: none;
+                    height: 0px;
+                }}
+                QScrollBar::add-page:vertical, QScrollBar::sub-page:vertical {{
+                    background: none;
+                }}
                 QLabel, QLineEdit, QComboBox, QPushButton {{
                     color: #222;
                     background: #fafafa;
