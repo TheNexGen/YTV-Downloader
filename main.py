@@ -424,7 +424,7 @@ class YouTubeDownloaderApp(QMainWindow):
 
     def __init__(self):
         super().__init__()
-        self.setWindowTitle("YTV Downloader beta")
+        self.setWindowTitle("YTV Downloader v1.0.2")
         logo_path = os.path.join(os.path.dirname(os.path.abspath(__file__)), 'ytdownloadlogo.ico')
         self.setWindowIcon(QIcon(logo_path))
         self.resize(700, 600)
